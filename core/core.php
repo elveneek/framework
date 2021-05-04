@@ -5,6 +5,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Server\MiddlewareInterface;
 
+define ('ROOT',  __DIR__ ) ;
+
 class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public static $instance;
 	private $dynamicRoutes=[];
@@ -31,7 +33,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	function __construct()
 	{
 		self::$instance = $this;
-		define ('ROOT',substr( __DIR__ ,0,-4));
+	
 		//Обегаем файлы
 		$this->dynamicRoutes['POST']=[];
 		$this->dynamicRoutes['GET']=[];
@@ -76,7 +78,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	}
 	private function loadAndIncludeProject(){
 		$app = $this;
-		require_once(ROOT . '/core/Elveneek/RecursiveFilterIterator.php');
+		//require_once(ROOT . '/core/Elveneek/RecursiveFilterIterator.php');
 		$loadInis=[];
 		$compileTemplates=[];
 		 
