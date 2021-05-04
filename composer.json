@@ -16,7 +16,7 @@
         "php": ">=7.4"
     },
     "autoload": {
-        "psr-0": {
+        "psr-4": {
             "Elveneek\\": "src/Elveneek/"
         }
     }
