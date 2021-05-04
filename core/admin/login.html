@@ -1,0 +1,14 @@
+
+
+<!DOCTYPE html>
+
+<?php if(iam()){ ?>
+Я админ
+<?php }else{ ?>
+Я не админ
+<?php } ?>
+<form method="POST" action="/admin/login">
+<input name="login" type="text"><br>
+<input name="password" type="password"><br>
+<input type="submit" value="Войти"><br>
+</form>

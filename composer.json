@@ -1,0 +1,23 @@
+{
+    "name": "elveneek/framework",
+    "type": "library",
+    "description": "Elveneek framework core",
+    "keywords": [],
+    "homepage": "https://github.com/elveneek/framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Damir Fakhrutdinov",
+            "email": "ainu.sky@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-0": {
+            "Elveneek\\": "src/Elveneek/"
+        }
+    }
+}
