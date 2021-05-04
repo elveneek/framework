@@ -18,6 +18,9 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public $currentRoute = false;
 	public $rpc = false;
 	public $adminAuth = false;
+	
+	public $container;
+	
 	private $currentIncludedFilename="";
 
 	
@@ -85,6 +88,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		$includeFiles=[];
 		$includeClasses=[];
 		
+		$this->container = new \DI\Container();
 		
 		//Loading core
 		$dir = 'core';
@@ -591,8 +595,29 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		if(isset($this->staticRoutesCallbacks[$method][$requestUri])){
 			$callback = $this->staticRoutesCallbacks[$method][$requestUri];
 			$this->currentRoute = $callback;
-			$forRun = $callback->callback;
-			$result = $forRun($request, $response); //todo: ob_start
+			
+			$callParams=[$request, $response];
+			
+			$refFunction = new ReflectionFunction($callback->callback);
+			$parameters = $refFunction->getParameters();
+			if(count($parameters)<=2){
+				$forRun = $callback->callback;
+				$result = $forRun($request, $response); //todo: ob_start
+			}else{
+				foreach($parameters as $parameter){
+					
+					if ($parameter->isOptional()) {
+						continue;
+					}
+					$type = $parameter->getType();
+					$class = null !== $type && !$type->isBuiltin() ? $type->getName() : null;
+					if(is_null($class)){
+						continue;
+					}
+					$callParams[]=$this->container->get($class);
+				}
+				$result = call_user_func_array($callback->callback,  array_values($callParams)); //todo: ob_start
+			}
 		}elseif (preg_match($this->routesRegexp[$method], $requestUri, $regexpResult) &&
 			isset($this->dynamicRoutesCallbacks['GET'][$regexpResult['MARK']])){
 				$callback = $this->dynamicRoutesCallbacks['GET'][$regexpResult['MARK']];
@@ -601,6 +626,22 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				unset($regexpResult[0]);
 				$regexpResult[]=$request;
 				$regexpResult[]=$response;
+				
+				$refFunction = new ReflectionFunction($callback->callback);
+				$parameters = $refFunction->getParameters();
+				foreach($parameters as $parameter){
+					
+					if ($parameter->isOptional()) {
+						continue;
+					}
+					$type = $parameter->getType();
+					$class = null !== $type && !$type->isBuiltin() ? $type->getName() : null;
+					if(is_null($class)){
+						continue;
+					}
+					$regexpResult[]=$this->container->get($class);
+				}
+				
 				$result = call_user_func_array($callback->callback,  array_values($regexpResult)); //todo: ob_start
 		}else{
 			$callback = function(){ print 'DEDAULT'; };	
