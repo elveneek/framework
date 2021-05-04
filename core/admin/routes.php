@@ -2,12 +2,13 @@
 $app = d();
 $app->locals['admin'] = new Admin();
 
-
+ 
 $app->get('/admin', function(){
 	/* форма авторизации и дашборд */
 	//Проверяем авторизацию
 	
-	return View::render('/admin/login.html');
+	print  View::render('/admin/login.html');
+	return ;
 });
 $app->post('/admin/login', function($request, $response){
 	

@@ -111,8 +111,8 @@ class View {
 	}
 	
 	public static function render($template, $params=[]){
-		
 		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
+		
 		return View::compileAndRunTemplate($result_template, true, false, $params);
 		
 		if($template===false){
@@ -141,7 +141,14 @@ class View {
 	public static function getLayoutRecursive($template){
 		//Первым делом определяем, какой именно файл будет взят в качестве истояника
 		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
-		$result_template_contents =  file_get_contents(ROOT.'/'.$result_template);
+		
+		if(substr($result_template,0,4)=='core'){
+			$root = ELVENEEKROOT;
+		}else{
+			$root = ROOT;
+		}
+		
+		$result_template_contents =  file_get_contents($root.'/'.$result_template);
 		//Проверяем, включает ли $result_template упоминание директивы компилятора #LAYOUT
 		$matches=[];
 		preg_match_all(static::LAYOUT_TEMPLATE,$result_template_contents, $matches);
@@ -204,8 +211,15 @@ class View {
 		$current_number = count(View::$compiledTemplatesRegistry);
 		View::$compiledTemplatesRegistry[$result_template] = $current_number;
 		//$current_number - номер функции, которая содержит в себе скомпилированный шаблон
+	 
 		
-		$templateString = file_get_contents(ROOT.'/'.$template);
+		if(substr($template,0,4)=='core'){
+			$root = ELVENEEKROOT;
+		}else{
+			$root = ROOT;
+		}
+		
+		$templateString = file_get_contents($root.'/'.$template);
 		if ($subPart!== false){
 			$matches = [];
 			$matchedSubTemplate="";
@@ -266,7 +280,12 @@ class View {
 	}
 	 
 	public static function compileFileToPHPString($template, $ehtml = false){
-		return static::compileTemplateStringtoPHPString(file_get_contents(ROOT.'/'.$template), $ehtml);
+		if(substr($template,0,5)=='core/'){
+			$root = ELVENEEKROOT;
+		}else{
+			$root = ROOT;
+		}
+		return static::compileTemplateStringtoPHPString(file_get_contents($root.'/'.$template), $ehtml);
 	}
 
 		public static function compileTemplateStringtoPHPString($_str, $ehtml = false){

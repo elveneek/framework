@@ -9,7 +9,12 @@ class RouteCallback {
 		$this->callback = $callback;
 		$this->currentIncludedFilename = $currentIncludedFilename;
 		//Обрезаем полный путь к файлу (оставляем только директорию)
-		$this->currentNicePath =  dirname(substr($currentIncludedFilename, strlen(realpath (ROOT))+1));
+		if(substr($currentIncludedFilename,0,strlen(ELVENEEKROOT))==ELVENEEKROOT){
+			$this->currentNicePath =  dirname(substr($currentIncludedFilename, strlen(realpath (ELVENEEKROOT))+1));
+		}else{
+			$this->currentNicePath =  dirname(substr($currentIncludedFilename, strlen(realpath (ROOT))+1));
+		}
+		
 		
 		$this->currentURL = $currentURL;
 		\View::$routesPaths[dirname($currentIncludedFilename)]=true;	

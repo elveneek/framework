@@ -4,8 +4,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Server\MiddlewareInterface;
-
-define ('ROOT',  __DIR__ ) ;
+ 
+define ('ELVENEEKROOT',substr( __DIR__ ,0,-4));
 
 class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public static $instance;
@@ -13,7 +13,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	private $defaultValue="";
 	
 	private $dynamicRoutesCallbacks=[];
-	private $staticRoutesCallbacks=[];
+	public $staticRoutesCallbacks=[];
 	
 	public $currentRoute = false;
 	public $rpc = false;
@@ -78,63 +78,113 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	}
 	private function loadAndIncludeProject(){
 		$app = $this;
-		//require_once(ROOT . '/core/Elveneek/RecursiveFilterIterator.php');
+		 
 		$loadInis=[];
 		$compileTemplates=[];
 		 
 		$includeFiles=[];
 		$includeClasses=[];
-		$absolutePartLength = strlen(realpath (ROOT))+1;
-		foreach (['core', 'app'] as $dir){
+		
+		
+		//Loading core
+		$dir = 'core';
+		$absolutePartLength = strlen(realpath (ELVENEEKROOT))+1;
+		$directory = new \RecursiveDirectoryIterator(ELVENEEKROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
+		$filter = new \Elveneek\RecursiveFilterIterator($directory);
 	 
-			$directory = new \RecursiveDirectoryIterator(ROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
-			$filter = new \Elveneek\RecursiveFilterIterator($directory);
-		 
-			
-		 
-			$iterator = new \RecursiveIteratorIterator($filter);
-			foreach ($iterator as $info) {
-				$fullPath = realpath($info->getPathname());
-				$onlyFilename =  $info->getFilename() ;
-				$ext = pathinfo($fullPath, PATHINFO_EXTENSION);
-				if($ext=="ini"){
-					$loadInis[]=$fullPath;
-					continue;
-				}
-				
-				if($ext=="html" || $ext=="ehtml"){
-					$relativePath = substr($fullPath, $absolutePartLength);
-					$compileTemplates[]=$relativePath ;
-					continue;
-				}
-				 
-				if($onlyFilename == '.'){
-					//Нашли директорию которая начинается с большой буквы
-					
-					$relativePath = substr(dirname( $fullPath), $absolutePartLength);
-					$this->autoloadDirs[$relativePath] = $relativePath;
-				}
-				if($ext=="php"){
-					
-					if($onlyFilename[0]>='A' && $onlyFilename[0]<='Z'){
-						 
-						$relativePath = substr(dirname( $fullPath), $absolutePartLength);
-						$this->autoloadDirs[$relativePath] = $relativePath;
-					
-					
-						$includeClasses[] = $fullPath;
-					}else{
-						$includeFiles[] = $fullPath;
-					}
-					//$relativePath = substr($fullPath, $absolutePartLength);
-					//$compileTemplates[]=$relativePath;
-					continue;
-				}
-				
-				
+		
+	 
+		$iterator = new \RecursiveIteratorIterator($filter);
+		foreach ($iterator as $info) {
+			$fullPath = realpath($info->getPathname());
+			$onlyFilename =  $info->getFilename() ;
+			$ext = pathinfo($fullPath, PATHINFO_EXTENSION);
+			if($ext=="ini"){
+				$loadInis[]=$fullPath;
+				continue;
 			}
 			
+			if($ext=="html" || $ext=="ehtml"){
+				$relativePath = substr($fullPath, $absolutePartLength);
+				$compileTemplates[]=$relativePath ;
+				continue;
+			}
+			 
+			if($onlyFilename == '.'){
+				//Нашли директорию которая начинается с большой буквы
+				
+				$relativePath = substr(dirname( $fullPath), $absolutePartLength);
+				$this->autoloadDirs[$relativePath] = $relativePath;
+			}
+			if($ext=="php"){
+				
+				if($onlyFilename[0]>='A' && $onlyFilename[0]<='Z'){
+					 
+					$relativePath = substr(dirname( $fullPath), $absolutePartLength);
+					$this->autoloadDirs[$relativePath] = $relativePath;
+				
+				
+					$includeClasses[] = $fullPath;
+				}else{
+					$includeFiles[] = $fullPath;
+				}
+				//$relativePath = substr($fullPath, $absolutePartLength);
+				//$compileTemplates[]=$relativePath;
+				continue;
+			}
+			
+			
 		}
+		// loading app
+		$dir = 'app';
+		$absolutePartLength = strlen(realpath (ROOT))+1;
+		$directory = new \RecursiveDirectoryIterator(ROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
+		$filter = new \Elveneek\RecursiveFilterIterator($directory);
+	 
+		
+	 
+		$iterator = new \RecursiveIteratorIterator($filter);
+		foreach ($iterator as $info) {
+			$fullPath = realpath($info->getPathname());
+			$onlyFilename =  $info->getFilename() ;
+			$ext = pathinfo($fullPath, PATHINFO_EXTENSION);
+			if($ext=="ini"){
+				$loadInis[]=$fullPath;
+				continue;
+			}
+			
+			if($ext=="html" || $ext=="ehtml"){
+				$relativePath = substr($fullPath, $absolutePartLength);
+				$compileTemplates[]=$relativePath ;
+				continue;
+			}
+			 
+			if($onlyFilename == '.'){
+				//Нашли директорию которая начинается с большой буквы
+				
+				$relativePath = substr(dirname( $fullPath), $absolutePartLength);
+				$this->autoloadDirs[$relativePath] = $relativePath;
+			}
+			if($ext=="php"){
+				
+				if($onlyFilename[0]>='A' && $onlyFilename[0]<='Z'){
+					 
+					$relativePath = substr(dirname( $fullPath), $absolutePartLength);
+					$this->autoloadDirs[$relativePath] = $relativePath;
+				
+				
+					$includeClasses[] = $fullPath;
+				}else{
+					$includeFiles[] = $fullPath;
+				}
+				//$relativePath = substr($fullPath, $absolutePartLength);
+				//$compileTemplates[]=$relativePath;
+				continue;
+			}
+			
+			
+		}
+		 
 		
 	//	print "\loadInis:\n";
 	//	var_dump($loadInis);
@@ -170,6 +220,14 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				}
 				if(is_file(ROOT.'/'. $path . '/'.$fileName_simple  )){
 					require_once ROOT.'/'. $path . '/'.$fileName_simple ;
+					return;
+				}
+				if(is_file(ELVENEEKROOT.'/'. $path . '/'.$fileName  )){
+					require_once ELVENEEKROOT.'/'. $path . '/'.$fileName ;
+					return;
+				}
+				if(is_file(ELVENEEKROOT.'/'. $path . '/'.$fileName_simple  )){
+					require_once ELVENEEKROOT.'/'. $path . '/'.$fileName_simple ;
 					return;
 				}	
 				
@@ -623,18 +681,9 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	
 }
 
+
+
 function d()
 {
 	return App::$instance;
 }
-
-require_once __DIR__ . '/../app/App.php';
-
-if (!isset(App::$instance)) {
-	new App();
-}
-
-
-
-$app = App::$instance;
-return $app;
