@@ -1,14 +1,18 @@
 #LAYOUT /admin/templates/main.html
 
+<form>
+<h1 class="caption_header"><button type="submit" class="btn btn-primary">Сохранить</button>
+<button type="button" class="btn btn-secondary">Отменить</button>Редактирование объекта</h1>
+<div class="white-container" style="margin-top:40px;min-height:80vh;margin-bottom:40px;">
 
-<h1 class="caption_header">Редактирование новости</h1>
-<div class="white-container">
-	ЭТО АДМИНКАА!
-	<hr>
-	Меню со ссылками <a href="/">Главная</a> | <a href="/admin/login">Вход в админку</a>
-	<hr>
-	<form class="row g-3">
+	<div class="row g-3">
 	<?= $ehtml ?>
 	</form> 
-	<hr>
+
 </div>
+
+<div class="buttons_footer">
+<button type="submit" class="btn btn-primary">Сохранить</button>
+<button type="button" class="btn btn-secondary">Отменить</button>
+</div>
+</form>

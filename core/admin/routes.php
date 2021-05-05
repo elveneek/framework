@@ -55,4 +55,16 @@ $app->get('/admin/:tablename/:method', function($tablename, $method,    $request
 	
 });
 
+$app->get('/admin/:tablename/:method/:id', function($tablename, $method, $id,    $request){
+	
+	$generator = new UIGenerator();
+	$generator->addControlsDir('/admin/controls');
+	$template = "/fields/"  . $tablename . '.ehtml';
+	
+	d()->this = ActiveRecord::factory_from_table($tablename)->find($id);
+	$ehtml =  View::renderEHTML($template, $method, ['request'=>$request, 'generator'=>$generator]);
+	return View::render('/admin/templates/edit.html', ['ehtml'=>$ehtml]);
+	
+});
+
 

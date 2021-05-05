@@ -3,9 +3,18 @@
 class AdminComponentSimple{
 	
 	function prepareData($input){
-		$input['name']="new value";
-		$input['id']="15";
-		$input['title']=$input[0];
+		
+		$id=d()->this->id;
+		$table = d()->this->table;
+		$input['comment']='';	
+		if(isset($input[2])){
+			$input['comment']=$input[2];
+		}
+		
+		$input['name']='data[' . $table . ']['. $id .']';
+		$input['title']=$input[1];
+		$input['value']=d()->this->get($input[0]);
+		
 		return $input;
 	}
 }
