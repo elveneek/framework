@@ -45,12 +45,13 @@ $app->post('/admin/save/:tablename', function($tablename, $id){
 	
 });
 
-$app->get('/admin/:tablename/:method', function($tablename, $method, Nyholm\Psr7\ServerRequest  $request){
+$app->get('/admin/:tablename/:method', function($tablename, $method,    $request){
 	
 	$generator = new UIGenerator();
 	$generator->addControlsDir('/admin/controls');
 	$template = "/fields/"  . $tablename . '.ehtml';
-	print View::renderEHTML($template, $method, ['request'=>$request, 'generator'=>$generator]);
+	$ehtml =  View::renderEHTML($template, $method, ['request'=>$request, 'generator'=>$generator]);
+	return View::render('/admin/templates/edit.html', ['ehtml'=>$ehtml]);
 	
 });
 
