@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
 <?php if(iam()){ ?>
-Я админ
+	Я админ
 <?php }else{ ?>
-Я не админ
+	Я не админ
 <?php } ?>
 <form method="POST" action="/admin/login">
 <input name="login" type="text"><br>
