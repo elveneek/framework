@@ -1,12 +1,143 @@
-<!DOCTYPE html>
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход в систему</title>
 
-<?php if(iam()){ ?>
-	Я админ
-<?php }else{ ?>
-	Я не админ
+    
+
+    
+
+    <!-- Bootstrap core CSS -->
+<link href="/admin/css/bootstrap.min.css" rel="stylesheet">
+ 
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+	  
+	  html, 	body {
+	  height: 100%;
+	}
+
+	body {
+	  display: flex;
+	  align-items: center;
+	  padding-top: 40px;
+	  padding-bottom: 40px;
+	  background-color: #5682a3;
+	}
+
+	.form-signin {
+	  width: 100%;
+	  max-width: 330px;
+	  padding: 15px;
+	  margin: auto;
+	}
+
+	.form-signin .checkbox {
+	  font-weight: 400;
+	}
+
+	.form-signin .form-floating:focus-within {
+	  z-index: 2;
+	}
+
+	.form-signin input[type="text"] {
+	  margin-bottom: -1px;
+	  border-bottom-right-radius: 0;
+	  border-bottom-left-radius: 0;
+	}
+
+	.form-signin input[type="password"] {
+	  margin-bottom: 10px;
+	  border-top-left-radius: 0;
+	  border-top-right-radius: 0;
+	}
+.blob {
+	background: radial-gradient(63.44% 82.03% at 55.58% -15.63%, rgb(90, 221, 230) 0%, rgba(90, 221, 230, 0.26) 53.72%, rgba(90, 221, 230, 0) 100%), linear-gradient(26.62deg, rgba(249, 124, 89, 0.8) 20.64%, rgba(249, 124, 89, 0) 49.82%), linear-gradient(56.79deg, rgb(185, 91, 230) 33.79%, rgba(185, 91, 230, 0) 72.67%), linear-gradient(301.08deg, rgba(252, 178, 91, 0.91) 20.42%, rgba(252, 178, 91, 0) 60.38%), linear-gradient(141.57deg, rgba(78, 173, 235, 0.85) 19.08%, rgba(78, 173, 235, 0) 98.72%), rgb(211, 228, 255); background-blend-mode: normal, normal, darken, normal, normal, normal; filter: blur(50px); border-radius: 15rem;
+	position:absolute;
+	width: 440px;
+	height:440px;
+	left:50%;
+	top:50%;
+	margin-top:-220px;
+	margin-left:-220px;
+	z-index:-2;
+}
+.blob2 {
+ 
+	position:absolute;
+	width: 440px;
+	height:440px;
+	left:50%;
+	top:50%;
+	margin-top:-220px;
+	margin-left:-220px;
+	display:none;
+	z-index:-2;
+}
+    </style>
+
+    
+    <!-- Custom styles for this template -->
+    <link href="signin.css" rel="stylesheet">
+  </head>
+  <body class="text-center">
+    <div class="blob"></div>
+    <div class="blob2">
+	<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#FF0066" d="M43,-52.8C55.5,-40.8,65.3,-27,67.5,-12.2C69.7,2.5,64.3,18.3,57.4,35.8C50.4,53.2,41.9,72.5,27.6,79.1C13.3,85.7,-6.8,79.7,-20.9,69.4C-35.1,59.1,-43.4,44.5,-52.6,29.8C-61.7,15.1,-71.7,0.3,-69.9,-12.8C-68.1,-25.9,-54.5,-37.3,-40.9,-49.1C-27.3,-60.9,-13.6,-73.1,0.8,-74.1C15.3,-75,30.5,-64.8,43,-52.8Z" transform="translate(100 100)" />
+</svg>
+	
+	</div>
+<main class="form-signin">
+  <form method="POST" action="/admin/login">
+   <?php if(d()->loginNotOk){ ?> 
+ <div class="alert alert-danger" role="alert">
+ Логин или пароль неверный.
+</div>
 <?php } ?>
-<form method="POST" action="/admin/login">
-<input name="login" type="text"><br>
-<input name="password" type="password"><br>
-<input type="submit" value="Войти"><br>
-</form>
+    <div class="form-floating">
+      <input type="text" name="login" class="form-control" value="<?=h(d()->loginUsed)?>" id="floatingInput" placeholder="Логин">
+      <label for="floatingInput">Логин</label>
+    </div>
+    <div class="form-floating">
+      <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Пароль">
+      <label for="floatingPassword">Пароль</label>
+    </div>
+	<div class="form-floating input-group">
+      <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Пароль">
+	   <button class="btn btn-outline-secondary" type="button" id="button-addon2">Button</button>
+      <label for="floatingPassword">Пароль</label>
+    </div>
+ <div class="form-floating">
+      <div class="input-group mb-3">
+		  <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2">
+		  <button class="btn btn-outline-secondary" type="button" id="button-addon2">Button</button>
+		</div>
+    </div>
+
+    
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Войти</button>
+    
+  </form>
+</main>
+
+
+    
+  </body>
+</html>

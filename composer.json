@@ -13,16 +13,8 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
-        "psr/http-message": "~1.0",
-        "psr/http-server-handler": "~1.0",
-        "psr/http-server-middleware": "^1.0",
-        "spiral/roadrunner": "^1.9.2",
-        "nyholm/psr7": "^1.2",
-        "symfony/var-dumper": "^5.0",
-        "vlucas/phpdotenv": "^5.0",
-        "hansott/psr7-cookies": "^3.0",
-        "php-di/php-di": "dev-master"
+        "php": ">=7.4"
+     
     },
     "autoload": {
 		"files": [

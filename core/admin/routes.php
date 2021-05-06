@@ -10,6 +10,15 @@ $app->get('/admin', function(){
 	print  View::render('/admin/login.html');
 	return ;
 });
+
+$app->get('/admin/logout', function(){
+	/* форма авторизации и дашборд */
+	//Проверяем авторизацию
+	
+	print  View::render('/admin/login.html');
+	return ;
+});
+
 $app->post('/admin/login', function($request, $response){
 	
 	$login = $request->getParsedBody()['login'];
@@ -19,8 +28,10 @@ $app->post('/admin/login', function($request, $response){
 		//Проверяем, пускаем ли пользователя в систему
 		$passwordAndLoginOK = d()->adminAuth->checkUserPassword($login, $password);
 		if(!$passwordAndLoginOK){
-			print 'Логин или пароль неверный';
-			return;
+			d()->loginNotOk=true;
+			d()->loginUsed=$login;
+			print  View::render('/admin/login.html');
+			return ;
 		}
 		d()->adminAuth->login($login, $request);
 	
