@@ -561,9 +561,12 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		//Пошёл цикл!
 		//Берем текущую активную мидлверину
 		$this->currentMiddleware++;
-		
-		//Сначала это первая, потом вторая, потом в самом конце  текущий класс
-		return $this->middlewaresCollection[$this->currentMiddleware]->process($request, $this);
+		try {
+			//Сначала это первая, потом вторая, потом в самом конце  текущий класс
+			return $this->middlewaresCollection[$this->currentMiddleware]->process($request, $this);
+		}catch (ResponseException $e) {
+			return $e->getResponse();
+		}
 	}
 	
 	/**
