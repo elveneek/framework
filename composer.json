@@ -19,6 +19,7 @@
         "psr/http-server-middleware": "^1.0",
         "spiral/roadrunner": "^2.1.1",
         "nyholm/psr7": "^1.2",
+        "nyholm/psr7-server": "^1.0.2"
         "symfony/var-dumper": "^5.0",
         "vlucas/phpdotenv": "^5.0",
         "hansott/psr7-cookies": "^3.0",
