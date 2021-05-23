@@ -9,25 +9,25 @@ define ('ELVENEEKROOT',substr( __DIR__ ,0,-4));
 
 class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public static $instance;
-	private $dynamicRoutes=[];
-	private $defaultValue="";
-	
-	private $dynamicRoutesCallbacks=[];
+    public $dynamicRoutes=[];
+    public $defaultValue="";
+
+    public $dynamicRoutesCallbacks=[];
 	public $staticRoutesCallbacks=[];
 	
 	public $currentRoute = false;
 	public $rpc = false;
 	public $adminAuth = false;
 	
-	public $container;
-	
-	private $currentIncludedFilename="";
+	public \DI\Container $container;
 
-	
-	private $routesRegexp=[];
-	private $autoloadDirs=[];
-	private $middlewaresCollection=[];
-	private $currentMiddleware=-1;
+    public $currentIncludedFilename="";
+
+
+    public $routesRegexp=[];
+    public $autoloadDirs=[];
+    public $middlewaresCollection=[];
+    public $currentMiddleware=-1;
 	
 	public $db=false;
 	public $_this_cache=[];
@@ -479,40 +479,39 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	}
 	
 	
-	function get($url, $callback){
-		
-		$callback = new \Elveneek\RouteCallback($callback, $this->currentIncludedFilename, $url);
+	public static function get($url, $callback){
+		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		//Определяем, роут статический или динамический
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-			$this->staticRoutesCallbacks['GET'][$url]=$callback;
+            \App::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
 		}else{
-			$this->dynamicRoutes['GET'][]=$url;
-			$this->dynamicRoutesCallbacks['GET'][]=$callback;
+            \App::$instance->dynamicRoutes['GET'][]=$url;
+            \App::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
 		}
 		return $callback;
 	}
 	
 	function post($url, $callback){
-		$callback = new \Elveneek\RouteCallback($callback, $this->currentIncludedFilename, $url);
+		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-			$this->staticRoutesCallbacks['POST'][$url]=$callback;
+            \App::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
 		}else{
-			$this->dynamicRoutes['POST'][]=$url;
-			$this->dynamicRoutesCallbacks['POST'][]=$callback;
+            \App::$instance->dynamicRoutes['POST'][]=$url;
+            \App::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
 		}
 		return $callback;
 	}
 	
 	function route($url, $callback){
-		$callback = new \Elveneek\RouteCallback($callback, $this->currentIncludedFilename, $url);
+		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-			$this->staticRoutesCallbacks['GET'][$url]=$callback;
-			$this->staticRoutesCallbacks['POST'][$url]=$callback;
+            \App::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
+            \App::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
 		}else{
-			$this->dynamicRoutes['GET'][]=$url;
-			$this->dynamicRoutesCallbacks['GET'][]=$callback;
-			$this->dynamicRoutes['POST'][]=$url;
-			$this->dynamicRoutesCallbacks['POST'][]=$callback;
+            \App::$instance->dynamicRoutes['GET'][]=$url;
+            \App::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
+            \App::$instance->dynamicRoutes['POST'][]=$url;
+            \App::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
 		}
 		return $callback;
 	}

@@ -255,7 +255,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	
 
 	
-	public function find_by($by,$what)
+	public static function find_by($by,$what)
 	{
 		
 		if(!isset($this)){
@@ -311,7 +311,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	}
 	
 	//FIXME: надо подумать. Тут было where_equal
-	public function w($field,$value)
+	public static function w($field,$value)
 	{
 		if(!isset($this)){
 			$object =  new static();
@@ -328,7 +328,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $this->where(DB_FIELD_DEL . 'is_' . $field . DB_FIELD_DEL . ' = 1');
 	}
 	//Функция принимает строку (которая пойдёт в условие) и массив дополнительных значений, которые пойдут как скобки
-	public function where(...$args)
+	public static function where(...$args)
 	{
 		
 		if(!isset($this)){

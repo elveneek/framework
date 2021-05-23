@@ -123,8 +123,8 @@ class View {
 			return '2+2';
 		}
 	}
-	
-	public function partial($template, $params=[]){
+
+    public static function partial($template, $params=[]){
 		
 		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
 		return View::compileAndRunTemplate($result_template, false, false, $params);
