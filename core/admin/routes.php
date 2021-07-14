@@ -40,21 +40,8 @@ $app->post('/admin/login', function($request, $response){
 	return;
 });
 
-$app->get('/admin/list/:tablename', function($tablename){
-	//filter[] && sort[] && paginate
-	
-});
-
-
-$app->get('/admin/edit/:tablename/:id', function($tablename, $id){
-	return View::render('/admin/templates/edit.html');
-	
-});
-
-$app->post('/admin/save/:tablename', function($tablename, $id){
-	
-	
-});
+ 
+ 
 
 $app->get('/admin/:tablename/:method', function($tablename, $method,    $request){
 	
@@ -78,4 +65,14 @@ $app->get('/admin/:tablename/:method/:id', function($tablename, $method, $id,   
 	
 });
 
+$app->post('/admin/save', function($request){
+	
+	//сохранение данных
+	
+	\Elveneek\AdminSave::call(
+		data: json_decode((string)($request->getBody()), true)
+	);
+	print 'alert(1);';
+	
+});
 

@@ -21,6 +21,33 @@
 		
 			#CONTENT#
 		</div>
+		
+		<script  src="https://code.jquery.com/jquery-3.6.0.min.js"  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+		<script  src="/vendor/elveneek/framework/assets/admin/js/jquery.serializeObject.js"   ></script>
+ 
+		<script>
+		$(function(){
+			$(document).on('click', '.js-admin-save', function(){
+				
+				var data = $(this).closest('form').serializeObject()
+				console.log(data)
+				
+				$.ajax({
+				  type: "POST",
+				  url: '/admin/save',
+				  contentType: 'application/json',
+				  data: JSON.stringify(data),
+				  success: function(result){
+					//eval(result);
+					console.log('result', result);
+				 },
+				  dataType: 'script'
+				});
+				return false;
+			});
+		})
+		//js-admin-save
+		</script>
 	</body>
 	 
 </html>
