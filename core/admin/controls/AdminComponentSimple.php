@@ -11,7 +11,7 @@ class AdminComponentSimple{
 			$input['comment']=$input[2];
 		}
 		
-		$input['name']='data[' . $table . ']['. $id .']';
+		$input['name']='data[' . $table . ']['. $id .']['.$input[0].']';
 		$input['title']=$input[1];
 		$input['value']=d()->this->get($input[0]);
 		

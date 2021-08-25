@@ -211,18 +211,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
  
  
 	//Статические конструкторы
-	public static function f($id)
-	{
-		if(!isset($this)){
-			$object =  new static();
-		}else{
-			$object = $this;
-		}
-		$object->queryId = (int)$id;
-		$object->find_by('id', (int)$id);
-		$object->limit(1);
-		return $object;
-	}
+	 
 	
 	public static function all()
 	{
@@ -237,41 +226,63 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	{
 		d()->Seo->from_object($this);
 	}
-	
-	//Функция find указывает на то, что необходимо искать нечто по полю ID
-	public static function find($id)
+
+
+	//парадокс, но __call Больше не нужен; //FIXME: может удалить?
+	function __call($name,$arguments)//DONE
 	{
-		
-		if(!isset($this)){
-			$object =  new static();
-		}else{
-			$object = $this;
+
+		if($name === 'find' || $name === 'f'){
+			$this->_find($arguments[0]);
+			return $this;
 		}
-		$object->queryId = (int)$id;
-		$object->find_by('id', (int)$id);
-		$object->limit(1);
-		return $object;
+
+		if($name === 'where'  ){
+			$this->_where(...$arguments);
+			return $this;
+		}
+
+		return $this;
 	}
 	
-
 	
-	public static function find_by($by,$what)
-	{
-		
-		if(!isset($this)){
-			$object =  new static();
-		}else{
-			$object = $this;
+	public static function __callStatic($name, $arguments){
+		if($name === 'find' || $name === 'f'){
+			$object = new static;
+			$object->_find($arguments[0]);
+			return $object;
 		}
-		
-		
+		if($name === 'where' || $name === 'w'){
+			$object = new static;
+			$object->_where(...$arguments);
+			return $object;
+		}
+		//FIXME: При вызове Product::ramabambaharummamburum() должно чтото происходть. Пусть падает к херам
+		 
+		throw new Exception('так нельзя');
+		 
+	}
+
+	//Функция find указывает на то, что необходимо искать нечто по полю ID
+	public function _find($id)
+	{
+		$this->queryId = (int)$id;
+		$this->find_by('id', (int)$id);
+		$this->limit(1);
+		return $this;
+	}
+	
+ 
+	public   function find_by($by,$what)
+	{
+	 
 		//FIXME: быстрый кеш по столбцу в массиве (url:id)
-		$object->queryReady = false;
+		$this->queryReady = false;
 		
 		//$this->order_by('');//FIXME: fast
-		$object->queryOrder='';
-		$object->queryConditions = ["( ".DB_FIELD_DEL .$by. DB_FIELD_DEL . " = ". App::$instance->db->quote($what)." )"];
-		return $object;
+		$this->queryOrder='';
+		$this->queryConditions = ["( ".DB_FIELD_DEL .$by. DB_FIELD_DEL . " = ". App::$instance->db->quote($what)." )"];
+		return $this;
 	}
 	
  
@@ -285,12 +296,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 	}
 	
-	//парадокс, но __call Больше не нужен; //FIXME: может удалить?
-	function __call($name,$arguments)//DONE
-	{
-		return $this;
-	}
-	
+
 	public function sql($query)
 	{
 		//FIXME: переделать полностью!
@@ -311,7 +317,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	}
 	
 	//FIXME: надо подумать. Тут было where_equal
-	public static function w($field,$value)
+	public static function w_FIX_ME($field,$value)
 	{
 		if(!isset($this)){
 			$object =  new static();
@@ -328,22 +334,16 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $this->where(DB_FIELD_DEL . 'is_' . $field . DB_FIELD_DEL . ' = 1');
 	}
 	//Функция принимает строку (которая пойдёт в условие) и массив дополнительных значений, которые пойдут как скобки
-	public static function where(...$args)
+	public function _where(...$args)
 	{
-		
-		if(!isset($this)){
-			$object =  new static();
-		}else{
-			$object = $this;
-		}
-		
+
 		//OLDTODO: переписать на preg_replace с исполльзованием последнего параметра
-		$object->queryReady=false;
+		$this->queryReady=false;
 		//Проверяем, был ли массив
 		foreach($args as &$arg){
 			if (is_array($arg)){
 				//Если есть хотя бы один массив, то мы попадаем в режим схлопывания запроса
-				$object->queryDisablePrepare = true;
+				$this->queryDisablePrepare = true;
 				//Логика объединения массива способом номер один: простое склеивание
 				
 				
@@ -368,15 +368,15 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 					$_condition .= $_conditions[$i-1]. " ".$param." "  ;
 				}
 				$_condition .= $_conditions[$i-1];
-				$object->queryConditions[] = '('.$_condition.')';
-				return $object;
+				$this->queryConditions[] = '('.$_condition.')';
+				return $this;
 			}
 		}
 		
 		//Режим сборки запроса для $prepared
-		$object->queryConditions[] = '('.$args[0].')';
-		$object->queryConditionsParams[ count($object->queryConditions)-1 ] = array_slice($args, 1) ;
-		return $object;
+		$this->queryConditions[] = '('.$args[0].')';
+		$this->queryConditionsParams[ count($this->queryConditions)-1 ] = array_slice($args, 1) ;
+		return $this;
 	}
 	
 
@@ -1090,9 +1090,9 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			//Проверка на возможность показать category->products. Если в таблице $name есть колонка table_id, то создаем новый экземпляр
 			if($columns !== false && isset($columns[$this->pluralToOne."_id"])){ //если таблица $name существует и там есть колонка table_id...
 				//FIXME: должно быть необязательно дергать данные из фактически базы данных, если мы запрашиваем поле типа product->categories
-				return ActiveRecord::factory_from_table($name)->where($this->pluralToOne."_id = ?", $this->_data[$this->_cursor]->id);
+				return ActiveRecord::FromTable($name)->where($this->pluralToOne."_id = ?", $this->_data[$this->_cursor]->id);
 				
-				//FIXME: это последний вызов ActiveRecord::factory_from_table, стоит тоже переделать. Особенно тут.
+				//FIXME: это последний вызов ActiveRecord::FromTable, стоит тоже переделать. Особенно тут.
 			}
 			return '';
 		} else {
@@ -1409,7 +1409,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	}
 	
 
-	static function factory_from_table($_tablename, $suffix = '')
+	static function FromTable($_tablename, $suffix = '')
 	{
 
 		$_modelname=ActiveRecord::plural_to_one(strtolower($_tablename));

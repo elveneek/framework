@@ -59,7 +59,7 @@ $app->get('/admin/:tablename/:method/:id', function($tablename, $method, $id,   
 	$generator->addControlsDir('/admin/controls');
 	$template = "/fields/"  . $tablename . '.ehtml';
 	
-	d()->this = ActiveRecord::factory_from_table($tablename)->find($id);
+	d()->this = ActiveRecord::fromTable($tablename)->find($id);
 	$ehtml =  View::renderEHTML($template, $method, ['request'=>$request, 'generator'=>$generator]);
 	return View::render('/admin/templates/edit.html', ['ehtml'=>$ehtml]);
 	

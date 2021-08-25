@@ -4,7 +4,7 @@ namespace Elveneek;
 class AdminSave extends Service{
 	//Сохранение данных которые пришли из формы
 	public static function run($data){
-		//var_dump($data);
+		 var_dump($data);
 		/*
 		array(2) {
 		  ["data"]=>
