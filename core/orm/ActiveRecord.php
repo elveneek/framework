@@ -211,12 +211,9 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
  
  
 	//Статические конструкторы
-	 
-	
 	public static function all()
 	{
-		$object =  new static();
-		return $object;
+		return  new static();
 	}
 	
 
@@ -231,12 +228,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	//парадокс, но __call Больше не нужен; //FIXME: может удалить?
 	function __call($name,$arguments)//DONE
 	{
-
-		if($name === 'find' || $name === 'f'){
-			$this->_find($arguments[0]);
-			return $this;
-		}
-
+ 
 		if($name === 'where'  ){
 			$this->_where(...$arguments);
 			return $this;
@@ -247,11 +239,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	
 	
 	public static function __callStatic($name, $arguments){
-		if($name === 'find' || $name === 'f'){
-			$object = new static;
-			$object->_find($arguments[0]);
-			return $object;
-		}
+ 
 		if($name === 'where' || $name === 'w'){
 			$object = new static;
 			$object->_where(...$arguments);
@@ -264,12 +252,13 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	}
 
 	//Функция find указывает на то, что необходимо искать нечто по полю ID
-	public function _find($id)
+	public static function find($id)
 	{
-		$this->queryId = (int)$id;
-		$this->find_by('id', (int)$id);
-		$this->limit(1);
-		return $this;
+		$object = new static;
+		$object->queryId = (int)$id;
+		$object->find_by('id', (int)$id);
+		$object->limit(1);
+		return $object;
 	}
 	
  
