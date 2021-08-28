@@ -1,6 +1,6 @@
-<?php 
-define('SQL_NULL','CONST'.md5(time()).'MYSQL_NULL_CONST'.rand());
-define ('DB_FIELD_DEL', '`');	
+<?php
+define('SQL_NULL','CONST'.md5(time()).'MYSQL_NULL_CONST'.rand()); //FIXME однозначно. Например, ->where('category_id = ?', null), почему бы и нет В Yii2 устроено странно ->andWhere(['is', 'activated_at', new \yii\db\Expression('null')]) для положительных и ->andWhere(['not', ['activated_at' => null]]) для отрицательных, они не приемлят обычный null
+define ('DB_FIELD_DEL', '`');	//FIXME постргя не должна устанавливаться сменой константы. На крайний случай константа класса в конце концов или забить на поддержку постгри на данном этапе
 //Класс Active Record, обеспечивающий простую добычу данных
 abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extends ArrayIterator
 {
@@ -27,28 +27,28 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	private $_objects_cache=array();
 	private $_safe_mode = false;
 	public static $curentTableColumns = false;
-	public $table=""; 
-	public $queryConditions=[]; 
-	public $queryConditionsParams=[]; 
-	public $querySelect='*'; 
-	public $queryLimit=''; 
-	public $queryOrder=' ORDER BY '.DB_FIELD_DEL . 'sort'.DB_FIELD_DEL . ' '; 
-	public $queryGroupBy=''; 
-	public $queryNew=false; 
-	public $queryTree=false; 
-	public $queryCalcRows=false; 
-	public $queryReady=false; 
-	public $queryId=0; 
-	
-	public $queryDisablePrepare=false; 
-	public $currentPDOStatement=false; 
-	
+	public $table="";
+	public $queryConditions=[];
+	public $queryConditionsParams=[];
+	public $querySelect='*';
+	public $queryLimit='';
+	public $queryOrder=' ORDER BY '.DB_FIELD_DEL . 'sort'.DB_FIELD_DEL . ' ';
+	public $queryGroupBy='';
+	public $queryNew=false;
+	public $queryTree=false;
+	public $queryCalcRows=false;
+	public $queryReady=false;
+	public $queryId=0;
+
+	public $queryDisablePrepare=false;
+	public $currentPDOStatement=false;
+
 	public $_cursor=0;
-	public $fetchedCount=0; 
-	public $isFetchedAll=0;   
- 
-	
-	public $pluralToOne=""; 
+	public $fetchedCount=0;
+	public $isFetchedAll=0;
+
+
+	public $pluralToOne="";
 
 
 	use ActiveRecordLINQ;
@@ -56,13 +56,13 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	use ActiveRecordPaginator;
 	use ActiveRecordLinked;
 	use ActiveRecordSave;
-	
+
 	public static $preparedStatements=[];
-	
+
 	public static function connect(){
-		
+
 		ActiveRecord::$preparedStatements=[];
-		
+
 		$dsn = 'mysql:host='. $_ENV['DB_HOST'] .';dbname='.$_ENV['DB_NAME'];
 		$opt = [
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -74,23 +74,22 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}else{
 			$db = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASSWORD'], $opt);
 		}
-		
+
 		$db->exec('SET CHARACTER SET utf8');
-		$db->exec('SET NAMES utf8');
+		$db->exec('SET NAMES utf8'); //FIXME: возможно еще SET sql_mode = "";
 		return $db;
 	}
-	
+
+	//__construct() сильно похудел, но нужно похудеть еще сильнее!
 	function __construct()
 	{
-		//FIXME: делать это при старте системы?.... но нельзя для быстросоздаваемых... Хотя их можно явно дергать
 		$_current_class = get_class($this);
-		if(substr($_current_class,-5)=='_safe'){
+		if(substr($_current_class,-5)=='_safe'){//FIXME: не факт что в админке это будет сохранено в будущем. Сейчас используется.
 			$_current_class = substr($_current_class,0,-5);
 			$this->_safe_mode = true;
 		}
 		$this->table=self::one_to_plural(strtolower($_current_class));
-		$this->pluralToOne=self::plural_to_one($this->table); //FIXME - должно же совпадать с именем класса, не?
-		// $this->init();
+		$this->pluralToOne=self::plural_to_one($this->table); //FIXME - должно же совпадать с именем класса, не? Может просто $this->pluralToOne= strtolower($_current_class). Будет быстрее.
 	}
 
 
@@ -135,7 +134,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			'/(^.*)focuses$/'=>'$1focus',
 			'/(^.*)s$/'=>'$1'
 		);
-		
+
 		//Слова - исключения
 		if(isset($_p_to_o[$string])) {
 			return $_p_to_o[$string];
@@ -150,7 +149,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $new;
 	}
-	
+
 	static function one_to_plural ($string)
 	{
 		$_o_to_p=array( //FIXME: сделать статическим массивом в ActiveRecord, включая в doit, return Должен добавлять исключение
@@ -192,7 +191,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			'/(^.*)focus$/'=>'$1focuses', //foci?
 			'/(^.*)$/'=>'$1s'
 		);
-		
+
 		//Слова - исключения
 		if(isset($_o_to_p[$string])) {
 			return $_o_to_p[$string];
@@ -207,28 +206,29 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $new;
 	}
- 
- 
- 
+
+
+
 	//Статические конструкторы
+	//TODO: параметры должны быть аналогичны where (типа Product->all('id = ?', 12)), в этом случае ::all будет выполнять роль статического Product::where()
 	public static function all()
 	{
 		return  new static();
 	}
-	
 
-	
-	//FIXME
+
+
+	//FIXME. Наверное пока рано, никакого Seo ещё нет. ВОзможно тут этому не место
 	public function init_seo()
 	{
 		d()->Seo->from_object($this);
 	}
 
 
-	//парадокс, но __call Больше не нужен; //FIXME: может удалить?
+	//парадокс, но __call Больше не нужен; //FIXME: может удалить? см. all()
 	function __call($name,$arguments)//DONE
 	{
- 
+
 		if($name === 'where'  ){
 			$this->_where(...$arguments);
 			return $this;
@@ -236,19 +236,19 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 
 		return $this;
 	}
-	
-	
+
+
 	public static function __callStatic($name, $arguments){
- 
+
 		if($name === 'where' || $name === 'w'){
 			$object = new static;
 			$object->_where(...$arguments);
 			return $object;
 		}
 		//FIXME: При вызове Product::ramabambaharummamburum() должно чтото происходть. Пусть падает к херам
-		 
+
 		throw new Exception('так нельзя');
-		 
+
 	}
 
 	//Функция find указывает на то, что необходимо искать нечто по полю ID
@@ -260,21 +260,29 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		$object->limit(1);
 		return $object;
 	}
-	
- 
+
+
+	//FIXME: всё таки надо подумать... Бывают, когда нужны не статические вызовы, например ActiveRecord::fromTable('products')->find(); поэтому пока создал вот такое
+	public function _findOne($id)
+	{
+		$this->queryId = (int)$id;
+		$this->find_by('id', (int)$id);
+		$this->limit(1);
+		return $this;
+	}
+
+
 	public   function find_by($by,$what)
 	{
-	 
+
 		//FIXME: быстрый кеш по столбцу в массиве (url:id)
 		$this->queryReady = false;
-		
-		//$this->order_by('');//FIXME: fast
-		$this->queryOrder='';
+		$this->queryOrder=''; //чтобы не делать доп сортио
 		$this->queryConditions = ["( ".DB_FIELD_DEL .$by. DB_FIELD_DEL . " = ". App::$instance->db->quote($what)." )"];
 		return $this;
 	}
-	
- 
+
+
 	function clone($param=false)
 	{
 		if($param!==false){
@@ -284,7 +292,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			return $this->clone_copy();
 		}
 	}
-	
+
 
 	public function sql($query)
 	{
@@ -296,16 +304,16 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $this;
 		*/
 	}
-	
+
 	public function slice($pieces=2)
 	{
 		//FIXME зависит от родительского класса
 		$this->_is_sliced=true;
-		$this->_slice_size=$pieces+2;	
+		$this->_slice_size=$pieces+2;
 		return $this;
 	}
-	
-	//FIXME: надо подумать. Тут было where_equal
+
+	//FIXME: надо подумать. Тут было where_equal. Функция w() задумывается как ->w('category_id', 12), или ->add_filter('category_id', 12); Возможно, where будет так работать, если 2 параметра пришло, и в первом нет вопросика и пробелов
 	public static function w_FIX_ME($field,$value)
 	{
 		if(!isset($this)){
@@ -317,7 +325,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		$object->where('`' .  str_replace(['"',"'",'\\',' ','.','*','/','`',')'], ['','','','','','','','',''], $field)  . '` = ?', $value);
 		return $object;
 	}
-	
+
 	function only($field)
 	{
 		return $this->where(DB_FIELD_DEL . 'is_' . $field . DB_FIELD_DEL . ' = 1');
@@ -334,9 +342,9 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 				//Если есть хотя бы один массив, то мы попадаем в режим схлопывания запроса
 				$this->queryDisablePrepare = true;
 				//Логика объединения массива способом номер один: простое склеивание
-				
-				
-				$_conditions=explode('?',' '.$args[0].' ');  
+
+
+				$_conditions=explode('?',' '.$args[0].' ');
 				$_condition='';
 				for ($i=1; $i<= count($_conditions)-1; $i++) {
 					$param=$args[$i];
@@ -345,7 +353,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 						if(empty($param)){
 							$param = ' null ';
 						}else{
-							// $param - ждём строго массив 
+							// $param - ждём строго массив
 							foreach ($param as $key=>$value){
 								$param[$key] = App::$instance->db->quote($param[$key]);
 							}
@@ -361,13 +369,13 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 				return $this;
 			}
 		}
-		
+
 		//Режим сборки запроса для $prepared
 		$this->queryConditions[] = '('.$args[0].')';
 		$this->queryConditionsParams[ count($this->queryConditions)-1 ] = array_slice($args, 1) ;
 		return $this;
 	}
-	
+
 
 	/**
 	 * Указывает LIMIT для будущего SQL запроса, возвращает объект для дальнейшего использования
@@ -388,8 +396,8 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			$this->queryLimit = '';
 		}
 		return $this;
-	}	
-	
+	}
+
 
 	public function order_by($order_by)//DONE
 	{
@@ -411,16 +419,6 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $this;
 	}
-	public function order($order_by)
-	{
-		$this->queryReady=false;
-		if(trim($order_by)!='') {
-			$this->queryOrder = ' ORDER BY '.$order_by.' ';
-		} else {
-			$this->queryOrder = '';
-		}
-		return $this;
-	}
 
 	public function select($select)
 	{
@@ -432,86 +430,87 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $this;
 	}
-	
+
+	//FIXME: возможно вместо and_select("title") должно быть ->select( $this->select() . ', title' ), т.е. select() без параметров должен возвращать текущий querySelect для дальнейней модификации
 	public function and_select($select)
 	{
 		$this->queryReady=false;
-		$this->querySelect = querySelect . ' , '. $select;
+		$this->querySelect = $this->querySelect . ' , '. $select;
 		return $this;
 	}
-	
 
-	
+
+
 	//FIXME: переписать на where, а затем развернуть
 	function search(...$args)
 	{
-		
+
 		$this->queryReady=false;
-		
+
 		if(count($args)<2){
 			return $this;
-		}		
+		}
 		$this->queryDisablePrepare = true;//FIXME: пока работает как массив, выключая в принципе prepared queries
-		
+
 		$param = App::$instance->db->quote('%'.$args[count($args)-1].'%');
 		$_pieces=array();
-		 
+
 		for ($i=0; $i<= count($args)-2; $i++) {
 			$_pieces[] = " ".DB_FIELD_DEL.$args[$i].DB_FIELD_DEL." LIKE  ".$param." ";
 		}
-		
+
 		$this->queryConditions[] =  '('. implode(' OR ',$_pieces)  .')' ;
 		return $this;
 	}
-	
+
 	//если были массивы, то тут будет пустенько
 	function prepared_params()
 	{
-		
+
 	}
 	//В связи с тем, что используются prepared queries, to_sql вернёт только первую часть. Вторая часть (массив) хранится в скомпилированном виде гдето ниже. т.е. кроме to_sql()
 	function to_sql()
 	{
-		
+
 		$_query_string='SELECT ';
-		
+
 		if($this->queryCalcRows) {//FIXME: отказываемся от этого
 			$_query_string .= ' SQL_CALC_FOUND_ROWS ';
 		}
 		$_query_string .= ' ' . $this->querySelect . ' FROM '.DB_FIELD_DEL.''.$this->table.''.DB_FIELD_DEL.' ';
-		
+
 		//В первую очередь надо схлопнуть запросы, если были массивы
-		
-		
-		
+
+
+
 		//FIXME: создать второй массив, в котором будут не условия а значения
 		if(!empty($this->queryConditions) ) {
-			
+
 			if($this->queryDisablePrepare){
 				//Ветка с схопнутыми массивами
 				//Буквально меняем массивы на месте
 				//Берём ВСЁ что есть в $this->queryConditions, затем меняем вопросики
-				
+
 				foreach ($this->queryConditionsParams as $key=> &$oneParamsArr){
-					
+
 					//////
-					$_conditions=explode('?',' '. $this->queryConditions[$key] .' ');  
+					$_conditions=explode('?',' '. $this->queryConditions[$key] .' ');
 					$_condition='';
 					for ($i=0; $i<= count($_conditions)-2; $i++) {
 						$_condition .= $_conditions[$i]. ' '. App::$instance->db->quote($oneParamsArr[$i]).' ' ;
 					}
 					$_condition .= $_conditions[$i];
 					$this->queryConditions[$key]=$_condition;
-					
+
 				}
-				
-				
+
+
 			}
 			// Если всё окей, то все условия просто соединяем
 			$_condition = implode(' AND ',$this->queryConditions);
 			$_query_string .= 'WHERE '.$_condition;
 		}
-		
+
 		if($this->queryGroupBy!='') {
 			$_query_string .=  ' '.$this->queryGroupBy.' ';
 		}
@@ -526,6 +525,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $_query_string;
 	}
 
+	//FIXME: fetchDataNow ?...
 	function fetch_data_now()
 	{
 		$this->queryReady = true;
@@ -534,31 +534,31 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		$this->fetchedCount = 0;
 		$this->isFetchedAll = false;
 		$_sql = $this->to_sql();
-		
+
 		//Сначала смотрим в результаты кеша
 		 //FIXME: сделай локальный кеш
-		 
+
 		//проверяем, делаем прямо сейчас или делаем prepare
 		if($this->queryDisablePrepare){
 			//делаем прямо сейчас
 			$statement = App::$instance->db->query($_sql . ' -- non prepared');
-			
-			
+
+
 			//FIXME: проверка и реконнект
 		}else{
 			//Смотрим нужный запрос в кеше подготовленных запросов
 			//App::$instance->db->prepare($_sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
 			//FIXME: посмотреть настройки курсора
-			$_sql = $_sql . ' -- prepared';
+			$_sql = $_sql . ' -- prepared'; // комментарий для отладки
 			if(isset(static::$preparedStatements[$_sql])){
 				$statement = static::$preparedStatements[$_sql];
 			}else{
 				$statement = App::$instance->db->prepare($_sql );
 				static::$preparedStatements[$_sql] = $statement;
 			}
-			
-			
-			
+
+
+
 
 			$flatten = [];
 			foreach($this->queryConditionsParams as $array){
@@ -569,25 +569,25 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 				$statement->execute($flatten);
 			}catch  (PDOException $exception) {
 				if($exception->getCode() === 'HY000' && $exception->errorInfo[1]===2006){
-					
+
 					//Переподключаемся и очищаем массив prepared statements
 					App::$instance->db = ActiveRecord::connect();
-					
+
 					//Повторно создаем текущий statement и помещаем в массив
 					$statement = App::$instance->db->prepare($_sql );
 					static::$preparedStatements[$_sql] = $statement;
-					
+
 					//Выполняем
 					$statement->execute($flatten);
 				}else{
 					throw $exception;
 				}
 			}
-			
+
 		}
-		//throw new PDOException('Херня случилась.'.json_encode($statement));	
+		//throw new PDOException('Херня случилась.'.json_encode($statement));
 		$this->currentPDOStatement = $statement;
-		
+
 		//Дёргаем одну строку
 		$row = $this->currentPDOStatement->fetch();
 		if($row===false){
@@ -598,12 +598,12 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			$this->fetchedCount = 1;  //Мы молодцы, можем делать not_empty
 			$this->_data[] = $row;  //Объекты передаются по ссылке, поэтому можем перекидывать и копировать.
 		}
-		
+
 		//Получаем список колонок текущей таблицы:
 		if(isset(ActiveRecord::$_columns_cache [$this->table])){
 			$columns = ActiveRecord::$_columns_cache [$this->table];
 		}else{
-			
+
 			if($this->querySelect == '*'){ //Если мы пытались получить все столбцы
 				$_res = $this->currentPDOStatement;
 			}else {
@@ -627,21 +627,21 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			}
 		}
 		static::$curentTableColumns = $columns;
-		
-		
+
+
 		return;
 		//FIXME: count Должен быть ленивым
 		//FIXME: здесь был пересчет known columns
 		//FIXME: здесь был пересчет calc_rows для пагинатора
 		//FIXME: здесь должны быть проверки на ошибки, в случае необходимости предложить админу создать столбец.
-		
+
 	}
 
 
 
 
 	//Итератор
-	
+
 	//Для получаения count мы вынуждаем систему скачать все данные до конца.
 	function count() //DONE
 	{
@@ -660,7 +660,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $this->_count;
 	}
 
-	
+
 	function current() //DONE
 	{
 		return $this;
@@ -685,7 +685,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 
 	function valid() //DONE
 	{
-		
+
 		if ($this->queryReady===false) {
 			$this->fetch_data_now();
 		}
@@ -696,7 +696,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			if($this->isFetchedAll === true){
 				return $this->_cursor < $this->_count;
 			}
-			
+
 			while($this->fetchedCount <= $this->_cursor){
 				//Например, получено 2 (были 0 и 1), а текущий курсор = 5, мы должны получить 2, 3, 4, 5
 				//Например, получено 3 (были 0, 1, 2), а текущий курсор = 2, мы не должны ничего делать
@@ -715,11 +715,11 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			}
 			return true;
 		}
-		
+
 		//Вот тут смотрим, обогнал ли курсор то количество данных, которое нам надо получить.
 		//Если курсор указывает на дальше, чем скачано на данный момент, то скачиваем
 		if($this->isFetchedAll === true && $this->_cursor >= $this->_count){
-			return false; 
+			return false;
 		}
 		$this->_revinded++;
 		if($this->_revinded % $this->_slice_size == 0){
@@ -727,30 +727,30 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			return false;
 		}
 		return true;
-			
+
 	}
 
 	function key()
 	{
 		return $this->_cursor;
 	}
-	
+
 	function rewind() //DONE
 	{
-		
+
 		if(!$this->_is_sliced){
 			$this->_cursor=0;
 			return;
 		}
-		
+
 		if($this->_must_revind){
 			$this->_must_revind=false;
 		}else{
 			$this->_cursor=0;
 		}
-		
+
 	}
-	
+
 	function offsetGet( $index ) //DONE
 	{
 		if(is_numeric($index)){
@@ -767,8 +767,8 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		} //FIXME: а если фетч не прошёл?...
 		return isset($this->_data[$this->_cursor]);
 	}
-	
-	
+
+
 	function offsetSet($offset, $value) {
         if (is_null($offset)) {
             //ничего пока не делать
@@ -794,11 +794,11 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	}
 	function offsetUnset($offset) {
 		//unset($this->_data[$this->_cursor]);
-		//Я этого делать не буду. Пока. //FIXME, наверное $user->name = "вася"; unset($user->name); должен отменять присваивание. А в случае поиска и изменении - записывать в базу null;
+		//Я этого делать не буду. Пока. //FIXME, наверное $user->name = "вася"; unset($user->name); должен отменять присваивание. А в случае поиска и изменении - записывать в базу null;. Надо подумать про числовые и буквенные ансеты.
 	}
 
 	//Получение одного поля
-	
+
 	function __get($name)
 	{
 
@@ -809,7 +809,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 
 		//Item.ml_title
-		//FIXME: ненужно
+		//FIXME: ненужно пока
 		/*
 		if (substr($name, 0, 3) == 'ml_') {
 			$lang = doitClass::$instance->lang;
@@ -818,12 +818,12 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
             }
 		}
 		*/
-		
+
 		if($name[0]=='_'){
-			//FIXME: перенести linked прямо сюда		
+			//FIXME: перенести linked прямо сюда
 			return $this->linked(substr($name,1));
 		}
- 
+
 		/*
 		//FIXME: убрали to_*. Возможно, оно и нужно? Или нет? Наверное надо вынести в отдельный метод для чисто кода, типа $user->to('products')
 		if (substr($name,0,3)=='to_') {
@@ -837,13 +837,13 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			}else{
 				$many_to_many_table = $target_table.'_to_'.$this->$table;
 			}
-			
+
 			$column = ActiveRecord::plural_to_one(strtolower(substr($name,3))).'_id';
-			 
+
 			if(isset($this->_data[0])){
 				//d()->bad_table = et($many_to_many_table ); //FIXME: другие способы определять ошибку
 				$result = App::$instance->db->query(
-					"SELECT " . DB_FIELD_DEL . $column . DB_FIELD_DEL . 
+					"SELECT " . DB_FIELD_DEL . $column . DB_FIELD_DEL .
 					" FROM ". ($many_to_many_table ).  //FIXME: fetch() ???
 					" WHERE ". DB_FIELD_DEL . $this->pluralToOne . "_id". DB_FIELD_DEL ." = ". (int) $this->_data[$this->_cursor]->id //FIXME: может ли id null=>0?
 				)->fetchAll(PDO::FETCH_COLUMN);
@@ -853,36 +853,24 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			}else{
 				return '';
 			}
-			
+
 		}
 		*/
-		
+
 		$as_substr= strpos($name,'_as_');
 		if($as_substr!==false) {
 			$first_word = substr($name,0,$as_substr);
 			$second_word='as_' . substr($name,$as_substr+4);
-			return $second_word($this->{$first_word}, $first_word, $this); //FIXME: call_user_func?...
+			return $second_word($this->{$first_word}, $first_word, $this); //FIXME: call_user_func?... //FIXME: if($first_word[0]>= 'A' && <='Z' ) { $first_word::call()?... (Типа это сервис объект) }?...
 		}
-	
-	
+
+
 		return $this->get($name,true);
 	}
-	
-	/* 
-	Получение переменных напрямую
-	В случае необходимости получения в модели непосредственно значения переменной
-	Например
-	class User extends ar {
-		function title()
-		{
-			return '<b>'.$this->get('title').'</b>';
-		}
-	}
-	print doitClass::$instance->User->find(1)->title;
-	*/
-	
+
+
 	//Функция получает имя таблицы, и возвращает массив столбцов. Если таблицы не существует, она возвращает false
-	//FIXME: функция должна быть статической. Вернее везде где её дергают - дёргаться статически
+	//FIXME: функция должна быть статической. Вернее везде где её дергают - дёргаться статически. В идеале сам активрекорд не дёргает для своих нужд, просто содержимое функции есть тут и там, благо мест очень мало. Вроде как сейчас эта функция уже не используется
 	public function columns($tablename)
 	{
 		/*
@@ -894,14 +882,14 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		if(isset(ActiveRecord::$_columns_cache [$tablename])){
 			return ActiveRecord::$_columns_cache [$tablename];
 		}
-		
-		
+
+
 	 	try {
 			$_res=App::$instance->db->query('SELECT * FROM '.DB_FIELD_DEL.$tablename.DB_FIELD_DEL.' LIMIT 0', PDO::ERRMODE_SILENT);
 	 	}catch (PDOException $exception) {
 	 		$_res=false; //FIXME: а можно без Exception?...
 	 	}
-		
+
 		if ($_res!==false) {
 			$columns  = array();
 			$columns_count =  $_res->columnCount();
@@ -925,7 +913,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 	 */
 	function get_cursor_key_by_id($id)
 	{
-		
+
 		if ($this->queryReady===false) {
 			$this->fetch_data_now();
 		}
@@ -951,63 +939,63 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 				return $this->_get_by_id_cache[$id];
 			}
 		}
-		
+
 		return false;
 	}
-	
-	//FIXME: get не должен дёргать что попало (category->get('products')). Он должен быть супербыстрым, больше от него ничего не требуется
+
+	//FIXME: get не должен дёргать что попало (category->get('products')). Он должен быть супербыстрым, больше от него ничего не требуется. То есть если используем get, то получаем только чистые значения столбцов из базы. В Doit он делал всю магию, но игнорил определенные программистом методы класса, вместо function products() выполнялось поведение по умолчанию. Админка обращается к ->get() для вывода значений полей в редактировании
 	public function get($name, $mutilang=false)
 	{
 		if ($this->queryReady===false) {
 			$this->fetch_data_now();
 		}
-		
+
 		if(isset($this->_future_data[$this->_cursor][$name])){
 			return $this->_future_data[$this->_cursor][$name];
 		}
-		
+
 		//FIXME: а что делать с мультиязычностью?... подумаем потом. Пока закомментировано
 		/*
 		if($mutilang && doitClass::$instance->lang != '' && doitClass::$instance->lang!=''){
-			if (isset($this->_data[$this->_cursor]) && isset($this->_data[$this->_cursor][doitClass::$instance->lang.'_'.$name]) && $this->_data[$this->_cursor][doitClass::$instance->lang.'_'.$name]!='') {	
+			if (isset($this->_data[$this->_cursor]) && isset($this->_data[$this->_cursor][doitClass::$instance->lang.'_'.$name]) && $this->_data[$this->_cursor][doitClass::$instance->lang.'_'.$name]!='') {
 				return $this->get(doitClass::$instance->lang.'_'.$name);
 			}
 		}
 		*/
-		
+
 		if (isset($this->_data[$this->_cursor])) {
 			//Item.title         //Получение одного свойства
 			if (property_exists($this->_data[$this->_cursor], $name)) {
 				/*
-				
-				//FIXME: добавить админские иконки
+
+				//FIXME: добавить админские иконки. Как вариант (правильный) это должно быть чтото вроде явного {.text|with_plugins} а не вот это вот всё на каждый чих
 				if(isset($this->_data[$this->_cursor]['admin_options']) &&  ($this->_data[$this->_cursor]['admin_options']!='') && $this->_safe_mode === false  ){
 					$admin_options = unserialize( $this->_data[$this->_cursor]['admin_options']);
-					
+
 					if(isset($admin_options[$name])){
 						return preg_replace_callback(
 							'/\<img\ssrc=\"\/cms\/external\/tiny_mce\/plugins\/mymodules\/module\.php\?([\@\-\_0-9a-zA-Z\&]+)\=([\-\_0-9a-zA-Z\&]+)\".[^\>]*\>/',
 							create_function(
-								 
+
 								'$matches',
 								'if(isset(d()->plugins[str_replace("@","#",$matches[1])])){return d()->call(str_replace("@","#",$matches[1]),array($matches[2]));};return "";'
 							),
 							$this->_data[$this->_cursor][$name]
 						);
-						 
-						
+
+
 					}
 				}*/
-				
+
 				return $this->_data[$this->_cursor]->$name;
 			}
 
-					
+
 			//Если в текущей таблице есть колонка $name (но нет в результатах ответа) - возвращаем ""
 			if(isset(static::$curentTableColumns[$name])){
 				return '';
 			}
-		
+
 			//Item.user          //Получение связанного объекта
 			if (isset(static::$curentTableColumns[$name.'_id']) ) {
 				//$this->_objects_cache - список собранных вещей, для решения проблемы N+1, например для foreach products as product; product->category
@@ -1021,7 +1009,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 						$this->isFetchedAll = true;
 						$this->_count = count($this->_data);
 					}
-					
+
 					$ids_array=array();
 					foreach($this->_data as $key=>$value){
 						if (!empty($value->{$name.'_id'})){
@@ -1057,7 +1045,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 				}catch (PDOException $exception) {
 					$_res=false; //FIXME: а можно без Exception?...
 				}
-				
+
 				if ($_res!==false) {
 					$columns  = array();
 					$columns_count =  $_res->columnCount();
@@ -1071,36 +1059,36 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 					$columns = false;
 				}
 			}
-			
-			
-			
-			
-			
+
+
+
+
+
 			//Проверка на возможность показать category->products. Если в таблице $name есть колонка table_id, то создаем новый экземпляр
 			if($columns !== false && isset($columns[$this->pluralToOne."_id"])){ //если таблица $name существует и там есть колонка table_id...
 				//FIXME: должно быть необязательно дергать данные из фактически базы данных, если мы запрашиваем поле типа product->categories
-				return ActiveRecord::FromTable($name)->where($this->pluralToOne."_id = ?", $this->_data[$this->_cursor]->id);
-				
-				//FIXME: это последний вызов ActiveRecord::FromTable, стоит тоже переделать. Особенно тут.
+				return ActiveRecord::fromTable($name)->where($this->pluralToOne."_id = ?", $this->_data[$this->_cursor]->id);
+
+				//FIXME: это последний вызов ActiveRecord::fromTable, стоит тоже переделать. Особенно тут.
 			}
 			return '';
 		} else {
-			//Item.ramambaharum_mambu_rum 
+			//Item.ramambaharum_mambu_rum
 			return '';
 		}
 		return '';
 	}
-	
 
-	
-	
+
+
+
 	public function fast_all_of($field) //DONE
 	{
-		
+
 		if ($this->queryReady===false) {
 			$this->fetch_data_now();
 		}
-		
+
 		//Получаем все данные до конца.
 		if(!$this->isFetchedAll){
 			while($row = $this->currentPDOStatement->fetch()){
@@ -1110,7 +1098,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			$this->isFetchedAll = true;
 			$this->_count = count($this->_data);
 		}
-		
+
 		//Заполняем массив с результатами
 		$result_array=array();
 		foreach($this->_data as $value) {
@@ -1118,7 +1106,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $result_array;
 	}
-		
+
 	public function is_empty()//DONE
 	{
 		if ($this->queryReady===false) {
@@ -1129,7 +1117,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return true;
 	}
-	
+
 	public function is_not_empty()
 	{
 		if ($this->queryReady===false) {
@@ -1140,7 +1128,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return false;
 	}
-	
+
 	public function ne()
 	{
 		if ($this->queryReady===false) {
@@ -1151,10 +1139,10 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return false;
 	}
-	
-	
+
+
 	///HERE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> МЫ СЕЙЧАС ТУТ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	
+
 	/*public function create($params=array())  //Crud - Create
 	{
 		//Более быстрый вариант $this->new
@@ -1167,8 +1155,8 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		return $this;
 	}
 */
-  
-	
+
+
 	/*public function all()
 	{
 		if (!$this->_options['queryready']) {
@@ -1180,12 +1168,12 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		foreach($this->_data as $element){
 			$_tmparr[] = new  $_class_name (array('table'=>$this->_options['table'],'data'=>array( $element ) ));
 		}
-		  
+
 		return $_tmparr;
 	}
 */
-	
-	
+
+
 	//Рекурсивная функция для быстрой сортировки дерева
 	private function get_subtree($id)
 	{
@@ -1201,25 +1189,25 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $_tmparr;
 	}
-	
+
 	public function tree($root=false)
 	{
 		//Если ленивый запрос ещё не произошёл - самое время.
 		if ($this->_options['queryready']==false) {
 			$this->fetch_data_now();
 		}
-		
+
 		//Если при создании объекта заранее указали его дерево - возвращаем его
 		if ($this->_options['tree']!==false) {
 			return $this->_options['tree'];
-		}		
+		}
 		$_tmparr=array();
 		$_class_name = get_class($this);
 		if (is_object($root)) {
 			$root=$root->id;
 		}
 		$this->_used_tree_branches=array();
-		
+
 		if($root === false) {
 			foreach($this->_data as $element){
 				//Если данный элемент корневой, родительских элементов нет, поле element_id пустое
@@ -1228,11 +1216,11 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 					if(empty($this->_used_tree_branches[$element['id']])){
 						$this->_used_tree_branches[$element['id']]=true;
 						$_tmparr[] = new  $_class_name (array('table'=>$this->_options['table'], 'data'=>array( $element ),'tree'=>$this->get_subtree($element['id'])));
-					}	
+					}
 				}
 			}
 		} else {
-		 
+
 			foreach($this->_data as $element){
 				//Если данный элемент корневой, родительских элементов нет, поле element_id == root
 				if(isset($element[$this->_options['plural_to_one']."_id"]) && ($element[$this->_options['plural_to_one']."_id"]== $root )) {
@@ -1240,16 +1228,16 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 					if(empty($this->_used_tree_branches[$element['id']])){
 						$this->_used_tree_branches[$element['id']]=true;
 						$_tmparr[] = new  $_class_name (array('table'=>$this->_options['table'], 'data'=>array( $element ),'tree'=>$this->get_subtree($element['id'])));
-					}	
+					}
 				}
 			}
 		}
-		
+
 		$this->_used_tree_branches=array();
 		return $_tmparr;
 	}
-	
-	
+
+
 
 
 
@@ -1259,8 +1247,8 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		$this->_shift=$_shift;
 		return $this;
 	}
-	
-	
+
+
 	function to_array()
 	{
 		if ($this->_options['queryready']==false) {
@@ -1283,20 +1271,20 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 			$result[$value['id']] = $value;
 		}
 		if($pretty !== false){
-			return json_encode($result, $pretty);	
+			return json_encode($result, $pretty);
 		}
 		return json_encode($result);
 	}
 
 
- 
-	
-	
-	 
 
-	
 
-	
+
+
+
+
+
+
 	function plus($elements=array()){
 		$to_add=array();
 		$curr_array = $this->fast_all_of('id');
@@ -1315,7 +1303,7 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		if(is_array($elements) && isset($elements[0]) && is_numeric($elements[0]['id'])){
 
-		
+
 			$result_array=array();
 			foreach($elements[0] as $value) {
 				$result_array[]= $value['id'];
@@ -1327,14 +1315,14 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 
 	}
 
-	
+
 	function by_id($id)
 	{
 		return $this[$this->get_cursor_key_by_id($id)];
 	}
-	
 
-	
+
+
 	function clone_copy($name=NULL){
 		if(is_null($name)){
 			$clone =  clone $this;
@@ -1346,11 +1334,11 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		$clone =  clone $this;
 		$clone->_clones=array();
-			
+
 		$this->_clones[$name] = $clone;
 		return $this->_clones[$name];
 	}
-	
+
 	function copy($name=NULL){
 		if(is_null($name)){
 			$clone =  clone $this;
@@ -1362,12 +1350,12 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		$clone =  clone $this;
 		$clone->_clones=array();
-			
+
 		$this->_clones[$name] = $clone;
 		return $this->_clones[$name];
 	}
- 
-	
+
+
 	function stub()
 	{
 		$this->where('false');
@@ -1396,14 +1384,14 @@ abstract class ActiveRecord implements ArrayAccess, Iterator, Countable //extend
 		}
 		return $table1.'_to_'.$table2;
 	}
-	
 
-	static function FromTable($_tablename, $suffix = '')
+
+	static function fromTable($_tablename, $suffix = '')
 	{
-
+		//FIXME: Обратить внимание, какой нибудь ProductsCombustor.php в редких случаях работать не будет, так как будет искать файл Productsсombustor.php в линуксе
 		$_modelname=ActiveRecord::plural_to_one(strtolower($_tablename));
 		$_modelname = strtoupper($_modelname[0]).substr($_modelname,1) . $suffix;
 
 		return new $_modelname ();
-	} 
+	}
 }
