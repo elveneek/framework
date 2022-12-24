@@ -1,6 +1,9 @@
 <?php
+
+use \Elveneek\ActiveRecord;
+
 $app = d();
-$app->locals['admin'] = new Admin();
+//$app->locals['admin'] = new Admin();
 
 
 $app->get('/admin', function(){

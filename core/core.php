@@ -4,6 +4,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use \Elveneek\ActiveRecord;
 
 define ('ELVENEEKROOT',substr( __DIR__ ,0,-4));
 
@@ -70,7 +71,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
 
 
-		\Elveneek\ActiveRecord::$db = \Elveneek\ActiveRecord::connect();
+		ActiveRecord::$db = ActiveRecord::connect();
 
 
 
@@ -238,7 +239,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			}
 			if(substr(strtolower($class_name),-10)!='controller' && $class_name[0]>='A' && $class_name[0]<='Z'){
 				//Если совсем ничего не найдено, попытка использовать ActiveRecord.
-				eval ("class ".$class_name." extends ActiveRecord {}");
+				eval ("class ".$class_name." extends \Elveneek\ActiveRecord {}");
 			}
 
 
