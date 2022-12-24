@@ -23,7 +23,8 @@
         "symfony/var-dumper": "^5.0",
         "vlucas/phpdotenv": "^5.0",
         "hansott/psr7-cookies": "^3.0",
-        "php-di/php-di": "dev-master"
+        "php-di/php-di": "dev-master",
+        "elveneek/activerecord": "^0.0.3"
     },
     "autoload": {
         "files": [

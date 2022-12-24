@@ -4,7 +4,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Server\MiddlewareInterface;
- 
+
 define ('ELVENEEKROOT',substr( __DIR__ ,0,-4));
 
 class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
@@ -14,11 +14,11 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
     public $dynamicRoutesCallbacks=[];
 	public $staticRoutesCallbacks=[];
-	
+
 	public $currentRoute = false;
 	public $rpc = false;
 	public $adminAuth = false;
-	
+
 	public \DI\Container $container;
 
     public $currentIncludedFilename="";
@@ -28,7 +28,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
     public $autoloadDirs=[];
     public $middlewaresCollection=[];
     public $currentMiddleware=-1;
-	
+
 	public $db=false;
 	public $_this_cache=[];
 	public $locals=[];
@@ -36,21 +36,21 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	function __construct()
 	{
 		self::$instance = $this;
-	
+
 		//Обегаем файлы
 		$this->dynamicRoutes['POST']=[];
 		$this->dynamicRoutes['GET']=[];
- 
+
 		$this->dynamicRoutesCallbacks['POST']=[];
 		$this->dynamicRoutesCallbacks['GET']=[];
 		$this->staticRoutesCallbacks['POST']=[];
 		$this->staticRoutesCallbacks['GET']=[];
-		
+
 		$this->routesRegexp['POST']="";
 		$this->routesRegexp['GET']="";
-		
-		
-		
+
+
+
 		/*
 		$this->middlewaresCollection=[
 			$adminMiddleware,
@@ -59,21 +59,21 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			$this //Эта херовина всегда должна быть в самом конце
 		];
 		 */
-		 
-		
+
+
 		$this->loadAndIncludeProject();
 		//выполняем bootstrap
-		
+
 		$this->middlewaresCollection[] = $this;
 		$this->prepareAndCompileRoutes();
 		//Подключаемся к базе данных
-		
-		 
-		
-		$this->db = ActiveRecord::connect();
-		
-		 	
-		
+
+
+
+		\Elveneek\ActiveRecord::$db = \Elveneek\ActiveRecord::connect();
+
+
+
 	}
 
 	public function addMiddleware($middleware){
@@ -81,23 +81,23 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	}
 	private function loadAndIncludeProject(){
 		$app = $this;
-		 
+
 		$loadInis=[];
 		$compileTemplates=[];
-		 
+
 		$includeFiles=[];
 		$includeClasses=[];
-		
+
 		$this->container = new \DI\Container();
-		
+
 		//Loading core
 		$dir = 'core';
 		$absolutePartLength = strlen(realpath (ELVENEEKROOT))+1;
 		$directory = new \RecursiveDirectoryIterator(ELVENEEKROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
 		$filter = new \Elveneek\RecursiveFilterIterator($directory);
-	 
-		
-	 
+
+
+
 		$iterator = new \RecursiveIteratorIterator($filter);
 		foreach ($iterator as $info) {
 			$fullPath = realpath($info->getPathname());
@@ -107,27 +107,27 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				$loadInis[]=$fullPath;
 				continue;
 			}
-			
+
 			if($ext=="html" || $ext=="ehtml"){
 				$relativePath = substr($fullPath, $absolutePartLength);
 				$compileTemplates[]=$relativePath ;
 				continue;
 			}
-			 
+
 			if($onlyFilename == '.'){
 				//Нашли директорию которая начинается с большой буквы
-				
+
 				$relativePath = substr(dirname( $fullPath), $absolutePartLength);
 				$this->autoloadDirs[$relativePath] = $relativePath;
 			}
 			if($ext=="php"){
-				
+
 				if($onlyFilename[0]>='A' && $onlyFilename[0]<='Z'){
-					 
+
 					$relativePath = substr(dirname( $fullPath), $absolutePartLength);
 					$this->autoloadDirs[$relativePath] = $relativePath;
-				
-				
+
+
 					$includeClasses[] = $fullPath;
 				}else{
 					$includeFiles[] = $fullPath;
@@ -136,17 +136,17 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				//$compileTemplates[]=$relativePath;
 				continue;
 			}
-			
-			
+
+
 		}
 		// loading app
 		$dir = 'app';
 		$absolutePartLength = strlen(realpath (ROOT))+1;
 		$directory = new \RecursiveDirectoryIterator(ROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
 		$filter = new \Elveneek\RecursiveFilterIterator($directory);
-	 
-		
-	 
+
+
+
 		$iterator = new \RecursiveIteratorIterator($filter);
 		foreach ($iterator as $info) {
 			$fullPath = realpath($info->getPathname());
@@ -156,27 +156,27 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				$loadInis[]=$fullPath;
 				continue;
 			}
-			
+
 			if($ext=="html" || $ext=="ehtml"){
 				$relativePath = substr($fullPath, $absolutePartLength);
 				$compileTemplates[]=$relativePath ;
 				continue;
 			}
-			 
+
 			if($onlyFilename == '.'){
 				//Нашли директорию которая начинается с большой буквы
-				
+
 				$relativePath = substr(dirname( $fullPath), $absolutePartLength);
 				$this->autoloadDirs[$relativePath] = $relativePath;
 			}
 			if($ext=="php"){
-				
+
 				if($onlyFilename[0]>='A' && $onlyFilename[0]<='Z'){
-					 
+
 					$relativePath = substr(dirname( $fullPath), $absolutePartLength);
 					$this->autoloadDirs[$relativePath] = $relativePath;
-				
-				
+
+
 					$includeClasses[] = $fullPath;
 				}else{
 					$includeFiles[] = $fullPath;
@@ -185,21 +185,21 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				//$compileTemplates[]=$relativePath;
 				continue;
 			}
-			
-			
+
+
 		}
-		 
-		
+
+
 	//	print "\loadInis:\n";
 	//	var_dump($loadInis);
 		//1. Компилируем ini файлы
-		
+
 	//	print "\autoloadDirs:\n";
 	//	var_dump($this->autoloadDirs);
 		//2. ПРописываем автолоады
-		
-		 
-		 
+
+
+
 		spl_autoload_register(function  ($class_name) {
 
 			$class_name = ltrim($class_name, '\\');
@@ -214,10 +214,10 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			$fileName .= str_replace('_', DIRECTORY_SEPARATOR, $class_name) . '.php';
 			//$fileName = 'vendors'.DIRECTORY_SEPARATOR.$fileName;
 			$lover_class_name=strtolower($class_name);
-			
+
 			foreach ($this->autoloadDirs as $path){
-				 
-				
+
+
 				if(is_file(ROOT.'/'. $path . '/'.$fileName  )){
 					require_once ROOT.'/'. $path . '/'.$fileName ;
 					return;
@@ -233,36 +233,36 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				if(is_file(ELVENEEKROOT.'/'. $path . '/'.$fileName_simple  )){
 					require_once ELVENEEKROOT.'/'. $path . '/'.$fileName_simple ;
 					return;
-				}	
-				
+				}
+
 			}
 			if(substr(strtolower($class_name),-10)!='controller' && $class_name[0]>='A' && $class_name[0]<='Z'){
 				//Если совсем ничего не найдено, попытка использовать ActiveRecord.
-				eval ("class ".$class_name." extends ActiveRecord {}");	
+				eval ("class ".$class_name." extends ActiveRecord {}");
 			}
-	 
+
 
 		},true,true);
-	 
-	 
+
+
 		//3. запрашиваем классы
 		foreach($includeClasses as $filename){
 			require_once ($filename);
 		}
-		
+
 		View::addTemplates($compileTemplates);
-		
+
 		//4. запрашиваем файлы
 		foreach($includeFiles as $filename){
 			$this->currentIncludedFilename = $filename;
 			require_once ($filename);
 		}
-			
+
 		$this->adminAuth = new AdminAuth();
 
 	}
-		
-		
+
+
 	//
 
 	function splitRoutesToChains($routes){
@@ -281,16 +281,16 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			$rows[] = $oneRouteClean;
 			$cleanRoutes[] = $routePart;
 			$bracketStarted[]=false;
-		
+
 		}
-		
+
 		$groups=[]; //Группы роутов, вложенных по уровням
 		$groups[0]=[];
 		foreach($rows[0] as $n=>$symbol){
 			$groups[$n][0]=0;
 		}
 		$current_group=0; //Первая группа, она есть всегда
-		
+
 		//последовательно перебираемся по столбцам
 		$current_column = 0; //Начиная с первого
 		$found_one_match = true;
@@ -308,10 +308,10 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				}elseif(count($rows[$i-1]) <= $current_column){
 					//Предыдущая строка слишком короткая
 					$need_group = true;
-					 
+
 				}elseif($rows[$i][$current_column] === $rows[$i-1][$current_column]){
 					//Строки достаточно длинные, чтобы продолжат их сравнивать
-					$rows_in_current_group++; 
+					$rows_in_current_group++;
 					$found_one_match = true;
 				}else{
 					//Следующий символ не равен предыдущему. Создаем новую группу
@@ -321,21 +321,21 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				}
 				if($need_group){
 					$current_group++;
-					 
+
 						$groups[$current_column][$i]=$i;
-					 
+
 					$rows_in_current_group=0;
 				//	$found_one_match = true;
 				}
-			}	
+			}
 			$current_column++;
 		}
 		//ЧИстим группы
-		 
+
 		$lastgroup=false;
-	
-		
-		
+
+
+
 		$maxcolumn = 0; //Максимально большой встречаемый номер строки
 		foreach($groups as $column=>$els){
 			if($maxcolumn < $column){
@@ -359,12 +359,12 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		foreach($groups as $column=>$els){
 			ksort($groups[$column]);
 		}
- 
+
 		//делаем группы массивов, где группа может включать одну или больше дочерних
 		$groupParents=[];
 		$groupParents[""] = [];
 		for($column=0;$column<=$maxcolumn;$column++){
-			$els = $groups[$column];	
+			$els = $groups[$column];
 			foreach ($els as $row){
 				if($column==0){
 					$parent = "";
@@ -375,7 +375,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				if($column >= mb_strlen($cleanRoutes[$row]) ){
 					$parent = $cleanRoutes[$row];
 				}
-				
+
 				if($column === $maxcolumn){
 					//Всё, дальше пустота, сворачиваем машину
 					$name = $routes[$row]  ;
@@ -396,7 +396,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			}
 		}
 
-		
+
 		foreach ($groupParents as $groupname => $elements){
 			$groupParents[$groupname] = array_unique ($elements);
 		}
@@ -413,7 +413,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 						break 2;
 					}
 				}
-				
+
 			}
 		}
 		//Чистим массив, делая его короче
@@ -426,25 +426,25 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			//	$groupParents[$parent][$key] = mb_substr($value,$parentlen);
 			}
 		}
-		
+
 
 		return  $this->createRegexpStringFromGroups($groupParents, "");
 
-		
+
 	}
 	//Router part
 	//https://nikic.github.io/2014/02/18/Fast-request-routing-using-regular-expressions.html
-	
+
 	function createRegexpStringFromGroups($groupParents, $current, $lastparent='' ){
-		
-		 
-			
+
+
+
 		$str = "";
 		if(count($groupParents[$current])>1){
 			if($current !=''){
-				
+
 				$currentCleaned = mb_substr($current,mb_strlen($lastparent));
-				
+
 				$str.='|'.$currentCleaned.'(?';
 			}
 			foreach($groupParents[$current] as $subelement){
@@ -452,33 +452,33 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 					//Есть дочерние элементы
 					$str.=$this->createRegexpStringFromGroups($groupParents, $subelement, $current);
 				}else{
-					
+
 					$currentCleaned = mb_substr($subelement,mb_strlen($current));
-				
+
 					$str.='|'.$currentCleaned;
-					
-					 
+
+
 				}
-				
+
 			}
 			if($current !=''){
 				$str.=')';
 			}
 		}else{
 			$subelement = $groupParents[$current][0];
-			
+
 			$currentCleaned = mb_substr($subelement,mb_strlen($lastparent));
-				
+
 			$str.='|'.$currentCleaned;
-				
-				
+
+
 			//$str.="\n|$subelement";
 		}
 		return $str;
-		
+
 	}
-	
-	
+
+
 	public static function get($url, $callback){
 		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		//Определяем, роут статический или динамический
@@ -490,7 +490,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		}
 		return $callback;
 	}
-	
+
 	function post($url, $callback){
 		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
@@ -501,7 +501,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		}
 		return $callback;
 	}
-	
+
 	function route($url, $callback){
 		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
@@ -515,14 +515,14 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		}
 		return $callback;
 	}
-	
+
 	function prepareAndCompileRoutes(){
-		 
+
 		foreach(['GET', 'POST'] as $method){
 			$routes = [];
-			
+
 			foreach($this->dynamicRoutes[$method] as $key=>$url){
-				//Преобразуем строку вида "/catalog/:url" в "catalog/(.*?) (*M:23)" 
+				//Преобразуем строку вида "/catalog/:url" в "catalog/(.*?) (*M:23)"
 				$routedRegexp = substr($url,1); //Убираем ведущий слеш.
 				/*
 				:url+ ==> (.+?)
@@ -531,26 +531,26 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				*/
 				$routedRegexp = preg_replace(array('#\:[a-z_][a-zA-Z0-9_]*\+#','#\:[a-z_][a-zA-Z0-9_]*\*#','#\:[a-z_][a-zA-Z0-9_]*#'),array('(.+?)','(.*?)','([^\/]+?)'),$routedRegexp);
 				$routes[] = $routedRegexp.' '.'(*MARK:'.$key.')';
-		 
-			} 
+
+			}
 			rsort($routes);
 			$resultRegExp = $this->splitRoutesToChains($routes);
-			
+
 			$routeRegexp='#^/(?'.$resultRegExp.')$#x';
 			$this->routesRegexp[$method] = $routeRegexp;
 		}
 	}
-	
+
 	function getRouteForRequest($request, $method){
 		//Сначала ищем статические функции
-		
+
 		//Потом ищем динамические
 		//
 	}
-	
+
 	/**
 	 * Выполняет цепочку Middlewares, пока может, передавая самого себя в качестве обработчика.
-	 * 
+	 *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      */
@@ -567,39 +567,39 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			return $e->getResponse();
 		}
 	}
-	
+
 	/**
      * ?
-	 * 
+	 *
 	 * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
      * @return ResponseInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-		
+
 		//FIXME: Если в качестве хендлера каким то образом прислали мидлверю, добавляем её в очередь (ЗАЧЕМ???)
 		//Тут наступила мякотка, начинаем наконец работать уже
 		//При этом $handler игнорируем вообще, иначе будет рекурсия
-	   
+
 		$response = new \Nyholm\Psr7\Response(200, ['Content-Type'=> 'text/html; charset=utf-8']); //TODO: тут нужна фабрика.
 		//Так как пошла мякотка, нужно организовать поведение по умолчанию, типа например контент тайп text/html
 		ob_start();
 
-		
+
 		$uri = $request->getUri()->getPath();
 		$requestUri=$uri;
-		
-		
+
+
 		$method = $request->getMethod();
 		$regexpResult =[];
 		 //Ищем статический метод
 		if(isset($this->staticRoutesCallbacks[$method][$requestUri])){
 			$callback = $this->staticRoutesCallbacks[$method][$requestUri];
 			$this->currentRoute = $callback;
-			
+
 			$callParams=[$request, $response];
-			
+
 			$refFunction = new ReflectionFunction($callback->callback);
 			$parameters = $refFunction->getParameters();
 			if(count($parameters)<=2){
@@ -607,7 +607,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				$result = $forRun($request, $response); //todo: ob_start
 			}else{
 				foreach($parameters as $parameter){
-					
+
 					if ($parameter->isOptional()) {
 						continue;
 					}
@@ -628,11 +628,11 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				unset($regexpResult[0]);
 				$regexpResult[]=$request;
 				$regexpResult[]=$response;
-				
+
 				$refFunction = new ReflectionFunction($callback->callback);
 				$parameters = $refFunction->getParameters();
 				foreach($parameters as $parameter){
-					
+
 					if ($parameter->isOptional()) {
 						continue;
 					}
@@ -643,16 +643,16 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 					}
 					$regexpResult[]=$this->container->get($class);
 				}
-				
+
 				$result = call_user_func_array($callback->callback,  array_values($regexpResult)); //todo: ob_start
 		}else{
-			$callback = function(){ print 'DEDAULT'; };	
+			$callback = function(){ print 'DEDAULT'; };
 			$result = $callback($request, $response); //todo: ob_start
 			$this->currentRoute = false;
 		}
-		
+
 		//Потом отдаём пустую заготовку про 404
-		 
+
 		//Здесь возможно несколько вариантов:
 		/*
 		$result - объект класса $response;
@@ -671,37 +671,37 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		}else{
 			$response->getBody()->write($result);
 		}
-		
+
 		return $response;
     }
-	
+
 	function dispachAll($request){
- 
+
 		$this->locals = $this->globals; //Очищается массив локальных переменных d()->[имя переменной], которые остались с предыдущего запроса
 		$this->adminAuth->clear(); //Сбрасывается состояние объекта авторизации администратора, вместо того чтобы пересоздавать объект "с нуля"
 		$this->currentMiddleware=-1;
 		//Эта херовина должна вернуть $response;
 		return $this->handle($request);
 	}
-	
- 
-	
-	
-	
+
+
+
+
+
 	//locals && globals
 	function __set($name,$value)
 	{
 		$this->locals[$name]=$value;
 	}
-	
+
 	function &__get($name)
 	{
- 
-		
+
+
 		if(isset($this->locals[$name])) {
 			return $this->locals[$name];
 		}
-		
+
 		//$fistrsim =  ord(substr($name,0,1));
 		//if($fistrsim>64 && $fistrsim<91){
 		if(preg_match('/^[A-Z].+/', $name)) { //FIXME: переделать на кваратные или фигурные скобочки
@@ -716,12 +716,12 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public function __isset($name) {
 		return isset($this->locals[$name]);
 	}
-	 
+
 	public function __unset($name) {
 		unset($this->locals[$name]);
 	}
- 
-	
+
+
 }
 
 
