@@ -14,7 +14,9 @@ class AdminComponentSimple{
 		$input['name']='data[' . $table . ']['. $id .']['.$input[0].']';
 		$input['title']=$input[1];
 		$input['value']=d()->this->get($input[0]);
-
+        if(is_null($input['value'])){
+            $input['value'] = "";
+        }
 		return $input;
 	}
 }

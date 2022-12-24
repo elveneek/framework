@@ -10,6 +10,7 @@
 		return  $request->getServerParams()["REMOTE_ADDR"];
 	}
 
-	function h($str=""){
+	function h($str){
+
 		return htmlspecialchars($str);
 	}
