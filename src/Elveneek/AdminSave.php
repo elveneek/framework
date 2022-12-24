@@ -1,6 +1,7 @@
 <?php
 
 namespace Elveneek;
+use \Elveneek\ActiveRecord;
 class AdminSave extends Service
 {
 	//Сохранение данных которые пришли из формы
@@ -11,7 +12,7 @@ class AdminSave extends Service
 		foreach ($data as $table=>$toSave){
 			foreach ($toSave as $id => $fields){
 				//СОздаем объект Activerecord_safe для собстна сохранения
-				$object = \ActiveRecord::fromTable($table, '_safe')->_findOne($id);
+				$object = ActiveRecord::fromTable($table, '_safe')->_findOne($id);
 				foreach($fields as $field=>$value){
 					$object->{$field} = $value;
 				}
