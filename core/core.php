@@ -275,7 +275,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		$cnt = count($routes);
 		for ($i = 0; $i<= $cnt-1;$i++){
 			$routePart = explode('(', $routes[$i])[0];
-			$oneRouteClean = preg_split('//u', $routePart, null, PREG_SPLIT_NO_EMPTY);
+			$oneRouteClean = preg_split('//u', $routePart, -1, PREG_SPLIT_NO_EMPTY);
 			if($maximumLength < count($oneRouteClean)){
 				$maximumLength = count($oneRouteClean);
 			}
