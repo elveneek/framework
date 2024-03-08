@@ -8,7 +8,7 @@
 			// Массив для шаблонизатора
 		
 		//Первым делом убираем директивы компилятора
-		View::$template_patterns[]=View::LAYOUT_TEMPLATE ;
+		View::$template_patterns[]=View::LAYOUT_TEMPLATE_WITH_NEWLINE ;
 		View::$template_replacements[]='';
 		 
 		 

@@ -7,6 +7,7 @@ class View {
 	public static $pathsCache = [];
 	
 	const LAYOUT_TEMPLATE = '|#LAYOUT\s+([\\a-zA-Z0-9_-]+\.e?html)|';
+	const LAYOUT_TEMPLATE_WITH_NEWLINE = '|#LAYOUT\s+([\\a-zA-Z0-9_-]+\.e?html)\r?[\n]?|';
 	
 	public static $template_patterns = [];
 	public static $template_replacements = [];
@@ -15,7 +16,27 @@ class View {
 	public static $compileTemplatesReverted = [];
 	public static $compiledTemplatesRegistry = [];
 	
+	public static $currentTemplatesRoot = "";
 	
+	public static $registeredTempates = [];
+
+	public static function setTemplateRoot($currentTemplatesRoot){
+		if(DIRECTORY_SEPARATOR !== '/'){
+			$currentTemplatesRoot = str_replace(DIRECTORY_SEPARATOR, '/', $currentTemplatesRoot);
+		}
+		static::$currentTemplatesRoot = $currentTemplatesRoot;
+	}
+	/** 
+	 * addTemplate регистрирует шаблон, доступный по абсолютному пути 
+	*/
+	public static function addTemplate($templateFullPath){
+		if(DIRECTORY_SEPARATOR !== '/'){
+			$templateFullPath = str_replace(DIRECTORY_SEPARATOR, '/', $templateFullPath);
+		}
+		static::$registeredTempates[$templateFullPath]=true;
+		static::$compileTemplates[count(static::$registeredTempates)-1] = $templateFullPath;
+	}
+
 	public static function addTemplates($templates){
 		static::$compileTemplates = $templates;
 		static::$compileTemplatesReverted = [];
@@ -35,7 +56,41 @@ class View {
 		
 
 	}
-	public static function getTemplateByFileAndPath($file, $path=""){
+	public static function getTemplateByFile($file){
+		if(DIRECTORY_SEPARATOR !== '/'){
+			$file=str_replace( DIRECTORY_SEPARATOR, '/', $file);
+		}
+				 
+		//Сначала пытаемся найти сам файл напрямую, возможно указан прямой путь на диске
+		if(isset(static::$registeredTempates[$file])){
+			return $file;
+		}
+		
+		//Если первыq символы - /, то ищем в корне текущего приложения
+		if($file[0]==='/'){
+			if(isset(static::$registeredTempates[static::$currentTemplatesRoot . $file])){
+				return static::$currentTemplatesRoot . $file;
+			}
+		}else{
+			$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+			$callerDir = dirname($trace[1]['file']);
+
+			$fullPath = realpath($callerDir. '/' . $file);
+			if(DIRECTORY_SEPARATOR !== '/'){
+				$fullPath=str_replace( DIRECTORY_SEPARATOR, '/', $fullPath);
+			}
+
+			if(isset(static::$registeredTempates[$fullPath])){
+				return $fullPath;
+			}
+		}
+
+		throw new Exception("Не удалось найти файл шаблона " . $file);
+		return false;
+	}
+	
+	//TODELETE
+	public static function DELETEDgetTemplateByFileAndPath($file, $path=""){
 		
 		//Если уже находили путь - выводим
 		if(isset(static::$pathsCache[$path.'#'.$file] )){
@@ -111,44 +166,27 @@ class View {
 	}
 	
 	public static function render($template, $params=[]){
-		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
-		
-		return View::compileAndRunTemplate($result_template, true, false, $params);
-		
+		$result_template = View::getTemplateByFile($template);
 		if($template===false){
-			//Автопоиск надо сделать попозжа
-			var_dump(d()->currentRoute->currentURL);
-		
-			print 'im ok'; 
-			return '2+2';
+			throw new Exception("Имя шаблона не может быть пустым");
 		}
+		return View::compileAndRunTemplate($result_template, true, false, $params);
 	}
 
     public static function partial($template, $params=[]){
-		
-		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
-		return View::compileAndRunTemplate($result_template, false, false, $params);
-		
+		$result_template = View::getTemplateByFile($template);
 		if($template===false){
-			//Автопоиск надо сделать попозжа
-			var_dump(d()->currentRoute->currentURL);
-		
-			print 'im ok'; 
-			return '2+2';
+			throw new Exception("Имя шаблона не может быть пустым");
 		}
+		return View::compileAndRunTemplate($result_template, false, false, $params);
 	}
 	//Принимает имя файла (main.html или wrapper.html) и возвращает массив из двух элементов: первая и вторая половинка
 	public static function getLayoutRecursive($template){
 		//Первым делом определяем, какой именно файл будет взят в качестве истояника
-		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
+		$result_template = View::getTemplateByFile($template);
+		 
 		
-		if(substr($result_template,0,4)=='core'){
-			$root = ELVENEEKROOT;
-		}else{
-			$root = ROOT;
-		}
-		
-		$result_template_contents =  file_get_contents($root.'/'.$result_template);
+		$result_template_contents =  file_get_contents($result_template);
 		//Проверяем, включает ли $result_template упоминание директивы компилятора #LAYOUT
 		$matches=[];
 		preg_match_all(static::LAYOUT_TEMPLATE,$result_template_contents, $matches);
@@ -174,6 +212,11 @@ class View {
 	}
 	public static function compileAndRunTemplate($template, $isFull, $subPart = false, $params=[]){
 		//Далее разбираем, какой именно $result_template мы ищем в кеше:
+		
+		if($template==''){
+			return 'ошибка';
+
+		}
 		
 		if($subPart!==false){
 			$result_template = 'EHTML#'.$template.'#'.$subPart;
@@ -212,14 +255,14 @@ class View {
 		View::$compiledTemplatesRegistry[$result_template] = $current_number;
 		//$current_number - номер функции, которая содержит в себе скомпилированный шаблон
 	 
-		
+	/*	
 		if(substr($template,0,4)=='core'){
 			$root = ELVENEEKROOT;
 		}else{
 			$root = ROOT;
 		}
-		
-		$templateString = file_get_contents($root.'/'.$template);
+	*/	
+		$templateString = file_get_contents($template);
 		if ($subPart!== false){
 			$matches = [];
 			$matchedSubTemplate="";
@@ -240,7 +283,7 @@ class View {
 			if(isset($matches[1][0])){
 				$currentLayout = $matches[1][0];
 			}else{
-				$currentLayout = 'main.html';
+				$currentLayout = '/main.html';
 			}
 			//Предварительно компилируем всё, что находится выше, циклично.
 			$parts = static::getLayoutRecursive($currentLayout);
@@ -389,11 +432,10 @@ class View {
 			d()->matches = ($matches);
 			$template = $matches[1]; //user.comments.title
 			
-			$result_template = View::compileFileToPHPString(View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath));
+			$result_template = View::compileFileToPHPString(View::getTemplateByFile($template));
 			
 			
-			return  $result_template ;
-			$substrings = explode('.',$string);
+			return  $result_template ; 
 			
 			
 			$result = '  '.View::compile_advanced_chain($substrings);
@@ -413,19 +455,8 @@ class View {
 	}
 	
 	static function renderEHTML($template, $method, $params=[]){
-		
-		
-		$result_template = View::getTemplateByFileAndPath($template, d()->currentRoute->currentNicePath);
+		$result_template = View::getTemplateByFile($template);
 		return View::compileAndRunTemplate($result_template, false, $method, $params);
-		
-		if($template===false){
-			//Автопоиск надо сделать попозжа
-			var_dump(d()->currentRoute->currentURL);
-		
-			print 'im ok'; 
-			return '2+2';
-		}
-		
 	}
 	
 	

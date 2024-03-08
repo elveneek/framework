@@ -61,7 +61,7 @@ class AdminAuth {
 		}
 
 
-		$session_id =  App::$instance->session->id();
+		$session_id =  ElveneekCore::$instance->session->id();
 		//Ищем существующую сессию
 		$session = Admin_session::where('sid = ?', $session_id)->limit(1)->order('');
 
@@ -99,7 +99,13 @@ class AdminAuth {
 
 	//Обращается в базу данных и ищет там нужную сессию. Проверяет, что она включена.
 	public function initialize(){
-		if(App::$instance->session->isEmptyNow){
+		if(ElveneekCore::$instance->session==''){
+			$this->_isGuest = true;
+			$this->_login = '';
+			$this->isInitialized = true;
+			return;
+		}
+		if(ElveneekCore::$instance->session->isEmptyNow){
 			$this->_isGuest = true;
 			$this->_login = '';
 			$this->isInitialized = true;
@@ -107,7 +113,7 @@ class AdminAuth {
 		}
 
 		//Запрос в базу данных
-		$session = Admin_session::where('sid = ?', App::$instance->session->id())->limit(1)->order('')->select('is_active, login');
+		$session = Admin_session::where('sid = ?', ElveneekCore::$instance->session->id())->limit(1)->order('')->select('is_active, login');
 		if($session->is_empty){
 			$this->_isGuest = true;
 			$this->_login = '';

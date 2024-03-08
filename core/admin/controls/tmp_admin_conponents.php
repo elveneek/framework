@@ -4,7 +4,7 @@ UIGenerator::addComponent('small', AdminComponentSimple::class, '/admin/controls
 UIGenerator::addComponent('big', AdminComponentSimple::class, '/admin/controls/big.html');
  
 
-d()->route('/testgenarator', function(){
+$app->route('/testgenarator', function(){
 	
 	$gen = new UIGenerator() ;
 	print $gen->renderComponent('small', ['title', 'Текст']);

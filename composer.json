@@ -33,5 +33,13 @@
         "psr-4": {
             "Elveneek\\": "src/Elveneek/"
         }
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.34"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }

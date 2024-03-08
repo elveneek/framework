@@ -2,7 +2,7 @@
 
 use \Elveneek\ActiveRecord;
 
-$app = d();
+//$app = d();
 //$app->locals['admin'] = new Admin();
 
 

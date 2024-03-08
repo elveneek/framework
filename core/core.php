@@ -29,7 +29,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
     public $autoloadDirs=[];
     public $middlewaresCollection=[];
     public $currentMiddleware=-1;
-
+	public $appRootDirectory='';
 	public $db=false;
 	public $_this_cache=[];
 	public $locals=[];
@@ -37,6 +37,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	function __construct()
 	{
 		self::$instance = $this;
+		ElveneekCore::$instance = $this;
 
 		//Обегаем файлы
 		$this->dynamicRoutes['POST']=[];
@@ -69,7 +70,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		$this->prepareAndCompileRoutes();
 		//Подключаемся к базе данных
 
-
+	
 
 		ActiveRecord::$db = ActiveRecord::connect();
 
@@ -80,7 +81,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	public function addMiddleware($middleware){
 		$this->middlewaresCollection[] = $middleware;
 	}
-	private function loadAndIncludeProject(){
+	public function loadAndIncludeProject(){
 		$app = $this;
 
 		$loadInis=[];
@@ -142,8 +143,16 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		}
 		// loading app
 		$dir = 'app';
-		$absolutePartLength = strlen(realpath (ROOT))+1;
-		$directory = new \RecursiveDirectoryIterator(ROOT . '/'. $dir, \FilesystemIterator::FOLLOW_SYMLINKS);
+
+		$reflector = new \ReflectionClass(get_class($this));
+		$dirFull =  dirname($reflector->getFileName());
+		 
+		if(!defined("ROOT")){
+			define("ROOT",  dirname ( $dirFull ));
+		}
+		$this->appRootDirectory = $dirFull;
+		$absolutePartLength = strlen(realpath (  dirname ( $dirFull )  ))+1;
+		$directory = new \RecursiveDirectoryIterator( $dirFull , \FilesystemIterator::FOLLOW_SYMLINKS);
 		$filter = new \Elveneek\RecursiveFilterIterator($directory);
 
 
@@ -239,7 +248,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			}
 			if(substr(strtolower($class_name),-10)!='controller' && $class_name[0]>='A' && $class_name[0]<='Z'){
 				//Если совсем ничего не найдено, попытка использовать ActiveRecord.
-				eval ("class ".$class_name." extends \Elveneek\ActiveRecord {}");
+				//eval ("class ".$class_name." extends \Elveneek\ActiveRecord {}");
 			}
 
 
@@ -250,16 +259,18 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		foreach($includeClasses as $filename){
 			require_once ($filename);
 		}
-
-		View::addTemplates($compileTemplates);
+		if(false && false){
+			View::addTemplates($compileTemplates);
+		}
 
 		//4. запрашиваем файлы
 		foreach($includeFiles as $filename){
 			$this->currentIncludedFilename = $filename;
 			require_once ($filename);
 		}
-
+		
 		$this->adminAuth = new AdminAuth();
+		
 
 	}
 
@@ -287,8 +298,10 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
 		$groups=[]; //Группы роутов, вложенных по уровням
 		$groups[0]=[];
-		foreach($rows[0] as $n=>$symbol){
-			$groups[$n][0]=0;
+		if(!empty($rows[0])){
+			foreach($rows[0] as $n=>$symbol){
+				$groups[$n][0]=0;
+			}
 		}
 		$current_group=0; //Первая группа, она есть всегда
 
@@ -439,11 +452,10 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 	function createRegexpStringFromGroups($groupParents, $current, $lastparent='' ){
 
 
-
+	//	dd($groupParents);
 		$str = "";
 		if(count($groupParents[$current])>1){
 			if($current !=''){
-
 				$currentCleaned = mb_substr($current,mb_strlen($lastparent));
 
 				$str.='|'.$currentCleaned.'(?';
@@ -453,12 +465,8 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 					//Есть дочерние элементы
 					$str.=$this->createRegexpStringFromGroups($groupParents, $subelement, $current);
 				}else{
-
 					$currentCleaned = mb_substr($subelement,mb_strlen($current));
-
 					$str.='|'.$currentCleaned;
-
-
 				}
 
 			}
@@ -466,13 +474,14 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				$str.=')';
 			}
 		}else{
-			$subelement = $groupParents[$current][0];
 
-			$currentCleaned = mb_substr($subelement,mb_strlen($lastparent));
+			if(!empty($groupParents[$current])) { //Это условие добавлено, потому что иначе $groupParents[$current][0] - null
+				$subelement = $groupParents[$current][0];
+				$currentCleaned = mb_substr($subelement,mb_strlen($lastparent));
 
-			$str.='|'.$currentCleaned;
+				$str.='|'.$currentCleaned;
 
-
+			}
 			//$str.="\n|$subelement";
 		}
 		return $str;
@@ -481,38 +490,38 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
 
 	public static function get($url, $callback){
-		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
+		$callback = new \Elveneek\RouteCallback($callback, self::$instance->currentIncludedFilename, $url);
 		//Определяем, роут статический или динамический
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-            \App::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
+            self::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
 		}else{
-            \App::$instance->dynamicRoutes['GET'][]=$url;
-            \App::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
+            self::$instance->dynamicRoutes['GET'][]=$url;
+            self::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
 		}
 		return $callback;
 	}
 
 	function post($url, $callback){
-		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
+		$callback = new \Elveneek\RouteCallback($callback, self::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-            \App::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
+            self::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
 		}else{
-            \App::$instance->dynamicRoutes['POST'][]=$url;
-            \App::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
+            self::$instance->dynamicRoutes['POST'][]=$url;
+            self::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
 		}
 		return $callback;
 	}
 
 	function route($url, $callback){
-		$callback = new \Elveneek\RouteCallback($callback, \App::$instance->currentIncludedFilename, $url);
+		$callback = new \Elveneek\RouteCallback($callback, self::$instance->currentIncludedFilename, $url);
 		if(strpos($url,':') === false && strpos($url,'(') === false) {
-            \App::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
-            \App::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
+            self::$instance->staticRoutesCallbacks['GET'][$url]=$callback;
+            self::$instance->staticRoutesCallbacks['POST'][$url]=$callback;
 		}else{
-            \App::$instance->dynamicRoutes['GET'][]=$url;
-            \App::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
-            \App::$instance->dynamicRoutes['POST'][]=$url;
-            \App::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
+            self::$instance->dynamicRoutes['GET'][]=$url;
+            self::$instance->dynamicRoutesCallbacks['GET'][]=$callback;
+            self::$instance->dynamicRoutes['POST'][]=$url;
+            self::$instance->dynamicRoutesCallbacks['POST'][]=$callback;
 		}
 		return $callback;
 	}
@@ -729,5 +738,5 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
 function d()
 {
-	return App::$instance;
+	return ElveneekCore::$instance;
 }

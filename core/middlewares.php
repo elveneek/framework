@@ -1,5 +1,5 @@
 <?php
  
  
-$app->addMiddleware( new \Elveneek\SessionsMiddleware());
+$app->addMiddleware( new \Elveneek\SessionsMiddleware($app));
 
