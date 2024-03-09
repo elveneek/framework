@@ -16,6 +16,19 @@ require_once  dirname (dirname (dirname (__DIR__))) . '/core/core.php' ;
 require_once      (dirname (__DIR__)) .  '/app/App1.php';
 
 
+
+
+class MyCustomComponentForTesting{
+
+	function prepareData($input){
+        $input['first_param']=$input[0];
+        $input['second_param']=$input[1];
+		return $input;
+	}
+}
+
+
+
 class WarningWithStacktrace extends ErrorException {}
 set_error_handler(function($severity, $message, $file, $line) {
     if ((error_reporting() & $severity)) {
@@ -32,13 +45,10 @@ set_error_handler(function($severity, $message, $file, $line) {
 test('test_view_paths', function () {
     $app  =  new App1();
 
+    //Если добавить явно ничгео не должно ломаться
     View::addTemplate( dirname(__DIR__).'/app/template_root.html');
-    View::addTemplate( dirname(__DIR__).'/app/main.html');
-    View::addTemplate( dirname(__DIR__).'/app/template_root2.html');
-    View::addTemplate( dirname(__DIR__).'/app/template_root_with_layout.html');
-    View::addTemplate( dirname(__DIR__).'/app/template_root_with_layout_oneline.html');
-    View::addTemplate( dirname(__DIR__).'/app/layout.html');
-    View::addTemplate( dirname(__DIR__).'/app/layout_oneline.html');
+    
+    //явно нужно регистрировать шаблоны с абсолютным путем
     View::addTemplate( dirname(__FILE__).'/directory_with_template/template3.html');
 
     View::setTemplateRoot( dirname(__DIR__).'/app');
@@ -55,8 +65,25 @@ test('test_view_paths', function () {
     expect(View::partial("../app/template_root.html"))->toBe(  'template_root_value' );
     expect(View::render("../app/template_root_with_layout.html"))->toBe(  "<header>\ntemplate_root_value\n</header>" );
     expect(View::render("../app/template_root_with_layout_oneline.html"))->toBe(  "<header>template_root_value</header>" );
-
-
+    
+    
     expect(View::render('directory_with_template/template3.html'))->toBe(  '<main>template_value3</main>' );
+    
+    expect(View::partial("/with_var.html", ["var1"=>"variable_value"]))->toBe(  'variable_value' );
 
+    expect(View::partial("/template_with_includes.html"))->toBe(  'template_root_valuetemplate_root_valuetemplate_root_value2template_root_value2' );
+    expect(View::partial("file_in_directory.html", relativePath: dirname(__DIR__).'/app/anotherdirectory' ))->toBe(  'file_in_directory_value' );
+
+
+    //Тестируем ehtml
+
+   
+ 
+
+    UIGenerator::addComponent('small_custom_test_component', MyCustomComponentForTesting::class, '/components/small_custom_test_component_template.html');
+    $generator = new UIGenerator();
+   
+    
+    expect(  View::renderEHTML('/products.ehtml', 'edit', ['generator'=>$generator]) )->toBe(  "<elements>\n<component>title</component> \n</elements>" );
+    //expect(  View::renderEHTML('/products.ehtml', 'edit', ['generator'=>$generator]) )->toBe(  "<elements>\n<component>title</component>\n</elements>" );
 });

@@ -37,7 +37,30 @@ class View {
 		static::$compileTemplates[count(static::$registeredTempates)-1] = $templateFullPath;
 	}
 
+	public static function  getAbsolutePath($path) {
+        $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
+        $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
+        $absolutes = array();
+        foreach ($parts as $part) {
+            if ('.' == $part) continue;
+            if ('..' == $part) {
+                array_pop($absolutes);
+            } else {
+                $absolutes[] = $part;
+            }
+        }
+        return implode(DIRECTORY_SEPARATOR, $absolutes);
+    }
+
 	public static function addTemplates($templates){
+
+		foreach($templates as $template){
+			static::addTemplate($template);
+		}
+		return;
+
+
+		//TODELETE
 		static::$compileTemplates = $templates;
 		static::$compileTemplatesReverted = [];
 		if(DIRECTORY_SEPARATOR !== '/'){
@@ -56,7 +79,7 @@ class View {
 		
 
 	}
-	public static function getTemplateByFile($file){
+	public static function getTemplateByFile($file, string $relativePath=null){
 		if(DIRECTORY_SEPARATOR !== '/'){
 			$file=str_replace( DIRECTORY_SEPARATOR, '/', $file);
 		}
@@ -72,10 +95,14 @@ class View {
 				return static::$currentTemplatesRoot . $file;
 			}
 		}else{
-			$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
-			$callerDir = dirname($trace[1]['file']);
-
-			$fullPath = realpath($callerDir. '/' . $file);
+			if($relativePath === null){
+				$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+				$callerDir = dirname($trace[1]['file']);
+				$fullPath = View::getAbsolutePath($callerDir. '/' . $file);
+			}else{
+				$fullPath = View::getAbsolutePath($relativePath. '/' . $file);
+			}
+			
 			if(DIRECTORY_SEPARATOR !== '/'){
 				$fullPath=str_replace( DIRECTORY_SEPARATOR, '/', $fullPath);
 			}
@@ -83,6 +110,9 @@ class View {
 			if(isset(static::$registeredTempates[$fullPath])){
 				return $fullPath;
 			}
+
+			throw new Exception("Не удалось найти файл шаблона (" .  $fullPath . " в " . $relativePath . ")");
+
 		}
 
 		throw new Exception("Не удалось найти файл шаблона " . $file);
@@ -165,16 +195,16 @@ class View {
 		return false;
 	}
 	
-	public static function render($template, $params=[]){
-		$result_template = View::getTemplateByFile($template);
+	public static function render($template, $params=[], string  $relativePath = null){
+		$result_template = View::getTemplateByFile($template, $relativePath);
 		if($template===false){
 			throw new Exception("Имя шаблона не может быть пустым");
 		}
 		return View::compileAndRunTemplate($result_template, true, false, $params);
 	}
 
-    public static function partial($template, $params=[]){
-		$result_template = View::getTemplateByFile($template);
+    public static function partial($template, $params=[], string  $relativePath = null){
+		$result_template = View::getTemplateByFile($template, $relativePath);
 		if($template===false){
 			throw new Exception("Имя шаблона не может быть пустым");
 		}
@@ -262,6 +292,7 @@ class View {
 			$root = ROOT;
 		}
 	*/	
+		$currentTemplateDirectory = dirname($template);
 		$templateString = file_get_contents($template);
 		if ($subPart!== false){
 			$matches = [];
@@ -292,12 +323,13 @@ class View {
 		
 
 		ob_start(); //Подавление стандартного вывода ошибок Parse Error
-		$result=eval('function  compiled_template_'.$current_number.'($viewTemplateParams=[]){ extract($viewTemplateParams); $d=d(); ?'.'>'. View::compileTemplateStringtoPHPString($templateString, $ehtml) .'<'.'?php ;} ');
+		$result=eval('function  compiled_template_'.$current_number.'($viewTemplateParams=[]){ extract($viewTemplateParams); $d=d(); ?'.'>'. View::compileTemplateStringtoPHPString($templateString, $ehtml, $currentTemplateDirectory) .'<'.'?php ;} ');
 		ob_end_clean();
 	 	
 		//запускаем функцию compiled_template_{$current_number}
 		
 		ob_start();
+		$params['currentTemplateDirectory'] = $currentTemplateDirectory;
 		$result =  call_user_func('compiled_template_'. $current_number, $params);
 		$_end = ob_get_contents();
 		ob_end_clean();
@@ -322,23 +354,18 @@ class View {
 		
 	}
 	 
-	public static function compileFileToPHPString($template, $ehtml = false){
-		if(substr($template,0,5)=='core/'){
-			$root = ELVENEEKROOT;
-		}else{
-			$root = ROOT;
-		}
-		return static::compileTemplateStringtoPHPString(file_get_contents($root.'/'.$template), $ehtml);
+	public static function compileFileToPHPString($template, $ehtml = false, string $currentFileDirectory = null){
+		return static::compileTemplateStringtoPHPString(file_get_contents($template), $ehtml,  $currentFileDirectory  );
 	}
 
-		public static function compileTemplateStringtoPHPString($_str, $ehtml = false){
+	public static function compileTemplateStringtoPHPString($_str, $ehtml = false, string $currentFileDirectory = null){
 		
 
 		
 		$_str   = preg_replace(View::$template_patterns,View::$template_replacements,str_replace(array("\r\n","\r"),array("\n","\n"),$_str));	
 		$_str = preg_replace('#{\.(.*?)}#','{this.$1}',$_str);
 	 	$_str = preg_replace_callback( "#\{((?:[a-zA-Z_]+[a-zA-Z0-9_]*?\.)*[a-zA-Z_]+[a-z0-9_]*?)}#mui", function($matches){
-			d()->matches = ($matches);
+			// d()->matches = ($matches); //TODO: checkandclean
 			$string = $matches[1]; //user.comments.title
 			$substrings = explode('.',$string);
 			
@@ -349,14 +376,11 @@ class View {
 		if($ehtml){
 			$_str = preg_replace_callback( "#^([a-zA-Z][a-zA-Z_]+\s.*?)$#miu", function($matches){
 				return '<?=$generator->renderComponent(' . static::EHTMLArrayClean($matches[0]).'); ?> ';
-				
-				
-				return $result;
 			}, $_str);
 		}
 		 
 		$_str = preg_replace_callback( "#\{((?:[a-z0-9_]+\.)*[a-z0-9_]+)((?:\|[a-z0-9_]+)+)}#mui", function($matches){
-			d()->matches = ($matches);
+			//d()->matches = ($matches);
 			$string = $matches[1]; //user.comments.title
  
 			$substrings = explode('.',$string);
@@ -379,7 +403,7 @@ class View {
 		
 		 
 		$_str = preg_replace_callback( "#\{((?:[a-z0-9_]+\.)*[a-z0-9_]+)((?:\|.*?)+)}#mui", function($matches){
-			d()->matches = ($matches);
+			//d()->matches = ($matches);
 			$string = $matches[1]; //user.comments.title
  
 			$substrings = explode('.',$string);
@@ -428,27 +452,14 @@ class View {
 		//Итоговые замены
 		
 		#/routes/1.html#
-		$_str = preg_replace_callback( "|#([A-Za-z0-9_\-\/]+\.html)#|mui", function($matches){
-			d()->matches = ($matches);
+		$_str = preg_replace_callback( "|#INCLUDE ([A-Za-z0-9_\-\/]+\.html)\r?[\n]?|mui", function($matches)use($currentFileDirectory){
+			//d()->matches = ($matches);
 			$template = $matches[1]; //user.comments.title
 			
-			$result_template = View::compileFileToPHPString(View::getTemplateByFile($template));
+			$result_template = View::compileFileToPHPString(View::getTemplateByFile($template, $currentFileDirectory), $currentFileDirectory);
 			
 			
 			return  $result_template ; 
-			
-			
-			$result = '  '.View::compile_advanced_chain($substrings);
-	
-			
-			$functions = $matches[2]; //|h|title|htmlspecialchars
-			$substrings = (explode('|',$functions));
-			array_shift($substrings);
-			$result = '<?php print  ' . array_reduce($substrings, function($all, $item){
-				return '$d->'.$item.'('. $all .')';
-			}, $result) .  ' ; ?>'; 
-			
-			return $result;
 		}, $_str);
 		
 		return $_str;

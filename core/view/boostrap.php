@@ -133,7 +133,7 @@ foreach($tmparr as $key=>$subval)
  
 
 		View::$template_patterns[]='#\{{([\\\\a-zA-Z0-9_/]+\.html)}}#';
-		View::$template_replacements[]='<'.'?php print $d->view->partial("$1"); ?'.'>';
+		View::$template_replacements[]='<'.'?php print View::partial("$1", relativePath: $currentTemplateDirectory); ?'.'>';
 
  
 		// {{helper param}}

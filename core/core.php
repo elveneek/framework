@@ -9,7 +9,7 @@ use \Elveneek\ActiveRecord;
 define ('ELVENEEKROOT',substr( __DIR__ ,0,-4));
 
 class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
-	public static $instance;
+	public static bool|ElveneekCore $instance ;
     public $dynamicRoutes=[];
     public $defaultValue="";
 
@@ -30,7 +30,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
     public $middlewaresCollection=[];
     public $currentMiddleware=-1;
 	public $appRootDirectory='';
-	public $db=false;
+	public bool|\PDO $db=false;
 	public $_this_cache=[];
 	public $locals=[];
 	public $globals=[];
@@ -111,8 +111,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			}
 
 			if($ext=="html" || $ext=="ehtml"){
-				$relativePath = substr($fullPath, $absolutePartLength);
-				$compileTemplates[]=$relativePath ;
+				$compileTemplates[]=$fullPath ;
 				continue;
 			}
 
@@ -134,8 +133,6 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				}else{
 					$includeFiles[] = $fullPath;
 				}
-				//$relativePath = substr($fullPath, $absolutePartLength);
-				//$compileTemplates[]=$relativePath;
 				continue;
 			}
 
@@ -168,8 +165,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 			}
 
 			if($ext=="html" || $ext=="ehtml"){
-				$relativePath = substr($fullPath, $absolutePartLength);
-				$compileTemplates[]=$relativePath ;
+				$compileTemplates[]=$fullPath ;
 				continue;
 			}
 
@@ -191,8 +187,6 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 				}else{
 					$includeFiles[] = $fullPath;
 				}
-				//$relativePath = substr($fullPath, $absolutePartLength);
-				//$compileTemplates[]=$relativePath;
 				continue;
 			}
 
@@ -259,9 +253,8 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		foreach($includeClasses as $filename){
 			require_once ($filename);
 		}
-		if(false && false){
-			View::addTemplates($compileTemplates);
-		}
+		View::addTemplates($compileTemplates);
+		
 
 		//4. запрашиваем файлы
 		foreach($includeFiles as $filename){

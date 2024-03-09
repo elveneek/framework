@@ -6,13 +6,13 @@ class Scaffold
 	public static function create_field($table,$field)
 	{
 		if (substr($field,-3)=='_id' || $field=='sort') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` int NULL");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` int NULL");
 		} elseif (substr($field,0,3)=='is_') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` tinyint(4) NOT NULL DEFAULT 0");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` tinyint(4) NOT NULL DEFAULT 0");
 		} elseif (substr($field,-3)=='_at') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` datetime NULL");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` datetime NULL");
 		} else {
-			App::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` text NULL, DEFAULT CHARACTER SET=utf8");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` ADD COLUMN `$field` text NULL, DEFAULT CHARACTER SET=utf8");
 		}
 		
 		//После выполнения скаффолда сервер перезагружается
@@ -21,13 +21,13 @@ class Scaffold
 	public static function rename_column($table,$field,$new_name)
 	{
 		if (substr($field,-3)=='_id' || $field=='sort') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." int NULL");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." int NULL");
 		} elseif (substr($field,0,3)=='is_') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." tinyint(4) NOT NULL DEFAULT 0");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." tinyint(4) NOT NULL DEFAULT 0");
 		} elseif (substr($field,-3)=='_at') {
-			App::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." datetime NULL");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." datetime NULL");
 		} else {
-			App::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." text NULL, DEFAULT CHARACTER SET=utf8");
+			ElveneekCore::$instance->db->exec("ALTER TABLE `".$table."` CHANGE COLUMN `$field` " . et($new_name) ." text NULL, DEFAULT CHARACTER SET=utf8");
 		}
 		//После выполнения скаффолда сервер перезагружается
 		
@@ -35,7 +35,7 @@ class Scaffold
 	public static function create_table($table,$one_element="")
 	{
 		if($one_element==''){
-			$result = App::$instance->db->exec("CREATE TABLE `".$table."` (
+			$result = ElveneekCore::$instance->db->exec("CREATE TABLE `".$table."` (
 				`id`  int(11) NOT NULL AUTO_INCREMENT ,
 				`title`  text CHARACTER SET utf8 COLLATE utf8_general_ci NULL ,
 				`created_at`  datetime NULL,		
@@ -47,7 +47,7 @@ class Scaffold
 				DEFAULT CHARACTER SET=utf8 COLLATE=utf8_general_ci
 				;");
 		}else{
-			$result = App::$instance->db->exec("CREATE TABLE `".$table."` (
+			$result = ElveneekCore::$instance->db->exec("CREATE TABLE `".$table."` (
 				`id`  int(11) NOT NULL AUTO_INCREMENT ,
 				`title`  text CHARACTER SET utf8 COLLATE utf8_general_ci NULL ,
 				`".$one_element."_id`  int(11) NULL DEFAULT NULL ,
