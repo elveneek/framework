@@ -111,89 +111,14 @@ class View {
 				return $fullPath;
 			}
 
-			throw new Exception("Не удалось найти файл шаблона (" .  $fullPath . " в " . $relativePath . ")");
+			throw new Exception("Не удалось найти файл шаблона (" .  $fullPath . " в " . $relativePath ?? $callerDir . ")");
 
 		}
 
 		throw new Exception("Не удалось найти файл шаблона " . $file);
 		return false;
 	}
-	
-	//TODELETE
-	public static function DELETEDgetTemplateByFileAndPath($file, $path=""){
-		
-		//Если уже находили путь - выводим
-		if(isset(static::$pathsCache[$path.'#'.$file] )){
-			return static::$pathsCache[$path.'#'.$file];
-		}
-		
-		//Если первый символ - Слеш, то ищем от корня последовательно в папках ['core', 'app']
-		if($file[0]==='/'){
-			$niceFile = substr($file, 1);
-			foreach (['', 'app/', 'core/']	 as $rootPath){
-				if(isset(static::$compileTemplatesReverted[$rootPath . $niceFile])){
-					static::$pathsCache[$path.'#'.$file] = $rootPath . $niceFile;
-					return $rootPath . $niceFile;
-				}
-			}
-			
-			//Если первый символ "/" - никакой поисковой магии
-			static::$pathsCache[$path.'#'.$file] = false;
-			return false; 
-		}
-		
-		
-
-		//Формируем $nicePath, который содержит разделители в стиле Linux
-		if(DIRECTORY_SEPARATOR !== '/'){
-			$nicePath = str_replace( DIRECTORY_SEPARATOR, '/', $path);	
-		}else{
-			$nicePath = $path;
-		}
-
-
-		//Если первые символы - ./, то ищем строго в текущей папке. Остальные (../, ../.. и так далее - не поддерживаются)
-		if($file[0]==='.' && $file[1]==='/'){
-			$niceFile = substr($file, 2);
-			
-			//Ищем, есть ли в текущем пути нужный HTML - сразу
-			if(isset(static::$compileTemplatesReverted[$nicePath . '/' . $niceFile])){
-				//Нашли прямо в текущей папке
-				static::$pathsCache[$path.'#'.$file] = $nicePath . '/' . $niceFile;
-				return $nicePath . '/' . $niceFile;
-			}
-			
-			//Если первый символ "/" - никакой поисковой магии
-			static::$pathsCache[$path.'#'.$file] = false;
-			return false; 
-		}
-		
-		
-		
-		//Ищем, есть ли в текущем пути нужный HTML - сразу
-		if(isset(static::$compileTemplatesReverted[$nicePath . '/' . $file])){
-			//Нашли прямо в текущей папке
-			static::$pathsCache[$path.'#'.$file] = $nicePath . '/' . $file;
-			return $nicePath . '/' . $file;
-		}
-		
-		//Ищем рекурсивно вверх по директории
-		$pathParts  = explode('/', $nicePath); // [app, news, blabla]
-		$countParts = count($pathParts);
-		while($countParts > 1){
-			$countParts--;
-			$newNicePath = implode('/', array_slice($pathParts, 0, $countParts));
-			//Проверяем уровнем вверх
-			if(isset(static::$compileTemplatesReverted[$newNicePath . '/' . $file])){
-				static::$pathsCache[$path.'#'.$file] = $newNicePath . '/' . $file;
-				return $newNicePath . '/' . $file;
-			}
-		}
-		
-		//Ничего не нашлось - возвращаем false
-		static::$pathsCache[$path.'#'.$file] = false;
-		return false;
-	}
+ 
 	
 	public static function render($template, $params=[], string  $relativePath = null){
 		$result_template = View::getTemplateByFile($template, $relativePath);
