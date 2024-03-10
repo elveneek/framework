@@ -1,7 +1,7 @@
 <?php
 
-UIGenerator::addComponent('small', AdminComponentSimple::class, '/admin/controls/small.html');
-UIGenerator::addComponent('big', AdminComponentSimple::class, '/admin/controls/big.html');
+UIGenerator::addComponent('small', AdminComponentSimple::class,  ELVENEEKROOT . 'core/admin/controls/small.html');
+UIGenerator::addComponent('big', AdminComponentSimple::class, ELVENEEKROOT . 'core/admin/controls/big.html');
  
 
 $app->route('/testgenarator', function(){

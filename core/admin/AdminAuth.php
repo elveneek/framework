@@ -51,7 +51,7 @@ class AdminAuth {
 		}
 	}
 
-	public function login($login=false, $request = false){
+	public function login($login=false, $request = null){
 		//Если передано без параметров, то возвращается текущий логин авторизованный
 		if($login===false){
 			if(!$this->isInitialized){
@@ -72,7 +72,7 @@ class AdminAuth {
 		}
 		$session->login = $login;
 		$session->is_active = 1;
-		if($request !== false){
+		if($request !== null){
 			$headers = $request->getHeaders();
 			$session->ip = getUserIP($request);
 			$session->user_agent = $headers["User-Agent"][0];

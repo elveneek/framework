@@ -210,20 +210,29 @@ class View {
 		}
 		return View::compileAndRunTemplate($result_template, false, false, $params);
 	}
+
+		
+	static function renderEHTML($template, $method, $params=[], string  $relativePath = null){
+		$result_template = View::getTemplateByFile($template, $relativePath);
+		return View::compileAndRunTemplate($result_template, false, $method, $params);
+	}
+	
+
 	//Принимает имя файла (main.html или wrapper.html) и возвращает массив из двух элементов: первая и вторая половинка
-	public static function getLayoutRecursive($template){
+	public static function getLayoutRecursive($template, $relativePath=null){
 		//Первым делом определяем, какой именно файл будет взят в качестве истояника
-		$result_template = View::getTemplateByFile($template);
+		$result_template = View::getTemplateByFile($template, relativePath: $relativePath);
 		 
 		
 		$result_template_contents =  file_get_contents($result_template);
 		//Проверяем, включает ли $result_template упоминание директивы компилятора #LAYOUT
 		$matches=[];
+		$relativePath=dirname($result_template);
 		preg_match_all(static::LAYOUT_TEMPLATE,$result_template_contents, $matches);
 		if(isset($matches[1][0])){
 			$layout = $matches[1][0];
 			//На данный момент мы знаем, что к файлу надо прицепить начало и конец другого файла, который описан в layout;
-			$parts = static::getLayoutRecursive($layout);
+			$parts = static::getLayoutRecursive($layout, $relativePath);
 			//типа получили
 			$begin = $parts[0];
 			$end = $parts[1];
@@ -317,13 +326,13 @@ class View {
 				$currentLayout = '/main.html';
 			}
 			//Предварительно компилируем всё, что находится выше, циклично.
-			$parts = static::getLayoutRecursive($currentLayout);
+			$parts = static::getLayoutRecursive($currentLayout, $currentTemplateDirectory);
 			$templateString = $parts[0] . $templateString. $parts[1];
 		}
 		
 
 		ob_start(); //Подавление стандартного вывода ошибок Parse Error
-		$result=eval('function  compiled_template_'.$current_number.'($viewTemplateParams=[]){ extract($viewTemplateParams); $d=d(); ?'.'>'. View::compileTemplateStringtoPHPString($templateString, $ehtml, $currentTemplateDirectory) .'<'.'?php ;} ');
+		$result=eval('function  compiled_template_'.$current_number.'($viewTemplateParams=[]){ extract($viewTemplateParams); $d=ElveneekCore::$instance; ?'.'>'. View::compileTemplateStringtoPHPString($templateString, $ehtml, $currentTemplateDirectory) .'<'.'?php ;} ');
 		ob_end_clean();
 	 	
 		//запускаем функцию compiled_template_{$current_number}
@@ -464,12 +473,7 @@ class View {
 		
 		return $_str;
 	}
-	
-	static function renderEHTML($template, $method, $params=[]){
-		$result_template = View::getTemplateByFile($template);
-		return View::compileAndRunTemplate($result_template, false, $method, $params);
-	}
-	
+
 	
 	
 	static function EHTMLArrayClean($str){

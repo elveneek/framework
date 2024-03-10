@@ -18,7 +18,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 
 	public $currentRoute = false;
 	public $rpc = false;
-	public $adminAuth = false;
+	public AdminAuth | null $adminAuth = null;
 
 	public \DI\Container $container;
 
@@ -253,6 +253,7 @@ class ElveneekCore  implements RequestHandlerInterface, MiddlewareInterface {
 		foreach($includeClasses as $filename){
 			require_once ($filename);
 		}
+		View::setTemplateRoot($dirFull);
 		View::addTemplates($compileTemplates);
 		
 
